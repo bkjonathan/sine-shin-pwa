@@ -1,1 +1,211 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 1rem;
+  --background: oklch(0.96 0.02 244);
+  --foreground: oklch(0.27 0.04 254);
+
+  --card: oklch(1 0 0 / 58%);
+  --card-foreground: oklch(0.27 0.04 254);
+  --popover: oklch(1 0 0 / 88%);
+  --popover-foreground: oklch(0.27 0.04 254);
+
+  --primary: oklch(0.66 0.17 244);
+  --primary-foreground: oklch(0.98 0.01 250);
+  --secondary: oklch(0.92 0.02 244 / 65%);
+  --secondary-foreground: oklch(0.29 0.03 254);
+
+  --muted: oklch(0.96 0.01 250 / 72%);
+  --muted-foreground: oklch(0.51 0.04 250);
+  --accent: oklch(0.93 0.03 230 / 68%);
+  --accent-foreground: oklch(0.26 0.05 248);
+
+  --destructive: oklch(0.62 0.22 27);
+  --border: oklch(0.88 0.03 246 / 70%);
+  --input: oklch(0.99 0 0 / 52%);
+  --ring: oklch(0.66 0.17 244 / 60%);
+
+  --chart-1: oklch(0.69 0.18 244);
+  --chart-2: oklch(0.73 0.13 194);
+  --chart-3: oklch(0.78 0.16 154);
+  --chart-4: oklch(0.79 0.14 82);
+  --chart-5: oklch(0.69 0.16 308);
+
+  --sidebar: oklch(1 0 0 / 52%);
+  --sidebar-foreground: oklch(0.27 0.04 254);
+  --sidebar-primary: oklch(0.66 0.17 244);
+  --sidebar-primary-foreground: oklch(0.98 0.01 250);
+  --sidebar-accent: oklch(0.94 0.03 245 / 72%);
+  --sidebar-accent-foreground: oklch(0.26 0.04 254);
+  --sidebar-border: oklch(0.86 0.03 246 / 70%);
+  --sidebar-ring: oklch(0.66 0.17 244 / 60%);
+}
+
+.dark {
+  --background: oklch(0.2 0.03 253);
+  --foreground: oklch(0.94 0.02 240);
+
+  --card: oklch(0.26 0.03 252 / 62%);
+  --card-foreground: oklch(0.94 0.02 240);
+  --popover: oklch(0.24 0.03 252 / 88%);
+  --popover-foreground: oklch(0.94 0.02 240);
+
+  --primary: oklch(0.76 0.15 242);
+  --primary-foreground: oklch(0.2 0.03 252);
+  --secondary: oklch(0.32 0.03 252 / 72%);
+  --secondary-foreground: oklch(0.93 0.02 240);
+
+  --muted: oklch(0.3 0.02 252 / 68%);
+  --muted-foreground: oklch(0.78 0.03 246);
+  --accent: oklch(0.36 0.03 245 / 78%);
+  --accent-foreground: oklch(0.95 0.01 240);
+
+  --destructive: oklch(0.72 0.17 28);
+  --border: oklch(0.54 0.04 250 / 65%);
+  --input: oklch(0.26 0.03 252 / 72%);
+  --ring: oklch(0.76 0.15 242 / 70%);
+
+  --chart-1: oklch(0.76 0.15 242);
+  --chart-2: oklch(0.74 0.13 194);
+  --chart-3: oklch(0.74 0.14 156);
+  --chart-4: oklch(0.8 0.12 82);
+  --chart-5: oklch(0.73 0.14 304);
+
+  --sidebar: oklch(0.24 0.03 252 / 72%);
+  --sidebar-foreground: oklch(0.94 0.02 240);
+  --sidebar-primary: oklch(0.76 0.15 242);
+  --sidebar-primary-foreground: oklch(0.2 0.03 252);
+  --sidebar-accent: oklch(0.33 0.03 248 / 78%);
+  --sidebar-accent-foreground: oklch(0.94 0.02 240);
+  --sidebar-border: oklch(0.54 0.04 250 / 65%);
+  --sidebar-ring: oklch(0.76 0.15 242 / 70%);
+}
+
+@keyframes liquid-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-26px) scale(1.04);
+  }
+}
+
+@keyframes liquid-drift {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  50% {
+    transform: translateX(22px) rotate(12deg);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "SF Pro Display", "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif;
+    background-image:
+      radial-gradient(circle at 8% 10%, rgba(56, 189, 248, 0.35), transparent 30%),
+      radial-gradient(circle at 90% 14%, rgba(14, 165, 233, 0.3), transparent 24%),
+      radial-gradient(circle at 88% 82%, rgba(59, 130, 246, 0.24), transparent 30%),
+      linear-gradient(140deg, #eff7ff 0%, #eef5ff 45%, #e9f6ff 100%);
+    background-attachment: fixed;
+  }
+}
+
+@layer utilities {
+  .liquid-page {
+    @apply relative min-h-screen overflow-hidden;
+  }
+
+  .liquid-orb {
+    @apply pointer-events-none absolute rounded-full blur-3xl;
+    animation: liquid-float 11s ease-in-out infinite;
+  }
+
+  .liquid-orb-drift {
+    animation: liquid-drift 13s ease-in-out infinite;
+  }
+
+  .glass-panel {
+    @apply border-white/50 bg-white/45 rounded-3xl border shadow-[0_24px_65px_-38px_rgba(15,23,42,0.45)] backdrop-blur-2xl;
+  }
+
+  .glass-panel-strong {
+    @apply border-white/60 bg-white/58 rounded-3xl border shadow-[0_32px_80px_-44px_rgba(15,23,42,0.55)] backdrop-blur-3xl;
+  }
+
+  .glass-pill {
+    @apply border-white/60 bg-white/60 rounded-full border px-3 py-1 backdrop-blur-xl;
+  }
+
+  .liquid-grid {
+    background-image: linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquid-orb,
+  .liquid-orb-drift {
+    animation: none;
+  }
+}
