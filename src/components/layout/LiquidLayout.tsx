@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Bell,
-  FileText,
+  HandCoins,
   Layers,
   LayoutDashboard,
   LogOut,
   Menu,
-  Scissors,
+  PackageSearch,
   Settings,
+  UserRoundSearch,
   Users,
 } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
@@ -29,9 +30,10 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { path: "/", label: "Overview", icon: LayoutDashboard },
-  { path: "/manufacturing", label: "Manufacturing", icon: Scissors },
   { path: "/staff", label: "Staff", icon: Users },
-  { path: "/invoices", label: "Invoices", icon: FileText },
+  { path: "/customers", label: "Customers", icon: UserRoundSearch },
+  { path: "/orders", label: "Orders", icon: PackageSearch },
+  { path: "/expenses", label: "Expenses", icon: HandCoins },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -114,7 +116,9 @@ export const LiquidLayout: React.FC = () => {
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{user?.email ?? "Signed in"}</p>
+                  <p className="truncate text-sm font-medium">
+                    {user?.email ?? "Signed in"}
+                  </p>
                   <p className="text-muted-foreground text-xs">Authenticated</p>
                 </div>
               </div>
@@ -152,7 +156,9 @@ export const LiquidLayout: React.FC = () => {
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{user?.email ?? "Signed in"}</p>
+                  <p className="truncate text-sm font-medium">
+                    {user?.email ?? "Signed in"}
+                  </p>
                   <p className="text-muted-foreground text-xs">Authenticated</p>
                 </div>
               </div>
@@ -182,13 +188,20 @@ export const LiquidLayout: React.FC = () => {
                 <span className="sr-only">Open navigation</span>
               </Button>
               <div>
-                <p className="text-sm font-semibold tracking-tight">Production Intelligence</p>
-                <p className="text-muted-foreground text-xs">Live workflow orchestration</p>
+                <p className="text-sm font-semibold tracking-tight">
+                  Production Intelligence
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  Live workflow orchestration
+                </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="glass-pill border-white/70 bg-white/70 text-xs">
+              <Badge
+                variant="outline"
+                className="glass-pill border-white/70 bg-white/70 text-xs"
+              >
                 Live
               </Badge>
               <Button variant="outline" size="icon-sm" className="rounded-full">

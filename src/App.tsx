@@ -1,35 +1,21 @@
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+} from "react-router-dom";
 
 import { LiquidLayout } from "./components/layout/LiquidLayout";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
-import { StaffStageAssignmentPage } from "./pages/StaffStageAssignmentPage";
+import { StaffPage } from "./pages/StaffPage";
+import { CustomersPage } from "./pages/CustomersPage";
+import { OrdersPage } from "./pages/OrdersPage";
+import { ExpensesPage } from "./pages/ExpensesPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-
-const Placeholder = ({ title }: { title: string }) => (
-  <div className="mx-auto max-w-3xl">
-    <Card className="glass-panel border-white/60">
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>
-          This module is queued for the same liquid-glass shadcn treatment.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="text-muted-foreground text-sm">
-        Core navigation, typography, spacing, and component styling now follow the
-        updated design language.
-      </CardContent>
-    </Card>
-  </div>
-);
 
 const ProtectedRoute = () => {
   const { session, loading } = useAuth();
@@ -62,13 +48,11 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<LiquidLayout />}>
               <Route index element={<DashboardPage />} />
-              <Route path="manufacturing" element={<StaffStageAssignmentPage />} />
-              <Route path="staff" element={<Placeholder title="Staff Directory" />} />
-              <Route
-                path="invoices"
-                element={<Placeholder title="Invoices & Finance" />}
-              />
-              <Route path="settings" element={<Placeholder title="Configuration" />} />
+              <Route path="staff" element={<StaffPage />} />
+              <Route path="customers" element={<CustomersPage />} />
+              <Route path="orders" element={<OrdersPage />} />
+              <Route path="expenses" element={<ExpensesPage />} />
+              <Route path="settings" element={<SettingsPage />} />
             </Route>
           </Route>
         </Routes>

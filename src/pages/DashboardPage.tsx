@@ -1,11 +1,10 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowUpRight,
-  Clock3,
-  Layers,
   ShoppingBag,
   TrendingUp,
-  Users,
+  CircleDollarSign,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -25,69 +24,57 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-const metrics = [
-  {
-    title: "Active Operators",
-    value: "1,240",
-    trend: "+8.2%",
-    progress: 78,
-    icon: Users,
-    tone: "text-sky-600",
-    chip: "bg-sky-500/15 text-sky-700",
-  },
-  {
-    title: "Revenue Run Rate",
-    value: "$45,231",
-    trend: "+12.4%",
-    progress: 66,
-    icon: TrendingUp,
-    tone: "text-emerald-600",
-    chip: "bg-emerald-500/15 text-emerald-700",
-  },
-  {
-    title: "Open Orders",
-    value: "38",
-    trend: "-2.1%",
-    progress: 54,
-    icon: ShoppingBag,
-    tone: "text-amber-600",
-    chip: "bg-amber-500/15 text-amber-700",
-  },
-];
-
-const activityRows = [
-  {
-    order: "INV-2026-001",
-    stage: "Cutting",
-    assignee: "Jordan K.",
-    status: "In Progress",
-    eta: "22m",
-  },
-  {
-    order: "INV-2026-004",
-    stage: "Pattern",
-    assignee: "Alex M.",
-    status: "Completed",
-    eta: "Done",
-  },
-  {
-    order: "INV-2026-007",
-    stage: "Sewing",
-    assignee: "Priya R.",
-    status: "Queued",
-    eta: "1h 5m",
-  },
-  {
-    order: "INV-2026-012",
-    stage: "Finishing",
-    assignee: "Noah T.",
-    status: "In Progress",
-    eta: "35m",
-  },
-];
+import { dashboardService } from "@/services/dashboard.service";
+import type { DashboardStats } from "@/types/database";
 
 export const DashboardPage = () => {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await dashboardService.getDashboardStats();
+        setStats(data);
+      } catch (error) {
+        console.error("Failed to load dashboard stats", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const metrics = [
+    {
+      title: "Total Revenue",
+      value: `$${(stats?.total_revenue || 0).toLocaleString()}`,
+      trend: "+0.0%",
+      progress: 100,
+      icon: TrendingUp,
+      tone: "text-emerald-600",
+      chip: "bg-emerald-500/15 text-emerald-700",
+    },
+    {
+      title: "Total Profit",
+      value: `$${(stats?.total_profit || 0).toLocaleString()}`,
+      trend: "+0.0%",
+      progress: 100,
+      icon: CircleDollarSign,
+      tone: "text-sky-600",
+      chip: "bg-sky-500/15 text-sky-700",
+    },
+    {
+      title: "Total Orders",
+      value: `${stats?.total_orders || 0}`,
+      trend: "+0.0%",
+      progress: 100,
+      icon: ShoppingBag,
+      tone: "text-amber-600",
+      chip: "bg-amber-500/15 text-amber-700",
+    },
+  ];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -97,13 +84,18 @@ export const DashboardPage = () => {
     >
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Operations Overview</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Operations Overview
+          </h1>
           <p className="text-muted-foreground text-sm">
             Real-time signals from your liquid production floor.
           </p>
         </div>
-        <Badge variant="outline" className="glass-pill w-fit border-white/70 bg-white/70 text-xs">
-          Synced 10s ago
+        <Badge
+          variant="outline"
+          className="glass-pill w-fit border-white/70 bg-white/70 text-xs"
+        >
+          Synced Just Now
         </Badge>
       </div>
 
@@ -117,7 +109,9 @@ export const DashboardPage = () => {
                   <metric.icon className={`size-4 ${metric.tone}`} />
                 </div>
               </div>
-              <CardTitle className="text-3xl">{metric.value}</CardTitle>
+              <CardTitle className="text-3xl">
+                {isLoading ? "..." : metric.value}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center gap-2 text-xs">
@@ -133,12 +127,12 @@ export const DashboardPage = () => {
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
+      <div className="grid gap-6 xl:grid-cols-1">
         <Card className="glass-panel border-white/60">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xl">Live Stage Activity</CardTitle>
+            <CardTitle className="text-xl">Recent Orders</CardTitle>
             <CardDescription>
-              Immediate status updates for active order flow.
+              A breakdown of the most recent orders mapped in the system.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -146,62 +140,55 @@ export const DashboardPage = () => {
               <TableHeader>
                 <TableRow className="border-white/40 hover:bg-transparent">
                   <TableHead>Order</TableHead>
-                  <TableHead>Stage</TableHead>
-                  <TableHead>Assignee</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">ETA</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Total Price</TableHead>
+                  <TableHead>Service Fee</TableHead>
+                  <TableHead className="text-right">Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {activityRows.map((row) => (
-                  <TableRow key={row.order} className="border-white/35 hover:bg-white/30">
-                    <TableCell className="font-medium">{row.order}</TableCell>
-                    <TableCell>{row.stage}</TableCell>
-                    <TableCell>{row.assignee}</TableCell>
+                {isLoading && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-4">
+                      Loading stats...
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!isLoading && stats?.recent_orders?.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-4">
+                      No recent orders found.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {stats?.recent_orders?.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    className="border-white/35 hover:bg-white/30"
+                  >
+                    <TableCell className="font-medium">
+                      {row.order_id || `ID: ${row.id}`}
+                    </TableCell>
+                    <TableCell>{row.customer_name || "Unknown"}</TableCell>
+                    <TableCell>${row.total_price.toLocaleString()}</TableCell>
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className={
-                          row.status === "Completed"
-                            ? "border-emerald-500/45 bg-emerald-500/10 text-emerald-700"
-                            : row.status === "In Progress"
-                              ? "border-sky-500/45 bg-sky-500/10 text-sky-700"
-                              : "border-amber-500/45 bg-amber-500/10 text-amber-700"
-                        }
+                        className="border-sky-500/45 bg-sky-500/10 text-sky-700"
                       >
-                        {row.status}
+                        {row.service_fee.toLocaleString()} (
+                        {row.service_fee_type})
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">{row.eta}</TableCell>
+                    <TableCell className="text-right">
+                      {row.created_at
+                        ? new Date(row.created_at).toLocaleDateString()
+                        : ""}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-panel liquid-grid border-white/60">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xl">Pipeline Health</CardTitle>
-            <CardDescription>Stage throughput balance across the day.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {[
-              { name: "Pattern", value: 96, icon: Layers },
-              { name: "Cutting", value: 72, icon: Clock3 },
-              { name: "Sewing", value: 51, icon: TrendingUp },
-            ].map((item) => (
-              <div key={item.name} className="space-y-2 rounded-2xl border border-white/55 bg-white/55 p-3 backdrop-blur-xl">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <item.icon className="text-primary size-4" />
-                    <span className="font-medium">{item.name}</span>
-                  </div>
-                  <span className="text-muted-foreground">{item.value}%</span>
-                </div>
-                <Progress value={item.value} className="h-2 bg-white/60" />
-              </div>
-            ))}
           </CardContent>
         </Card>
       </div>
