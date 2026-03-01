@@ -19,6 +19,7 @@ import { ExpenseFormPage } from "./pages/ExpenseFormPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./components/theme-provider";
+import { PwaInstallBanner } from "./components/pwa/PwaInstallBanner";
 
 const ProtectedRoute = () => {
   const { session, loading } = useAuth();
@@ -79,6 +80,7 @@ function App() {
           </Routes>
         </BrowserRouter>
       </AuthProvider>
+      <PwaInstallBanner />
     </ThemeProvider>
   );
 }
