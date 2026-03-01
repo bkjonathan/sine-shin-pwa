@@ -34,35 +34,47 @@ export const customersService = {
   async createCustomer(
     customer: Omit<Customer, "id" | "created_at" | "updated_at" | "deleted_at">,
   ): Promise<Customer> {
-    const { data, error } = await supabase
+    const { data: insertedData, error } = await supabase
       .from("customers")
       .insert(customer)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error("Error creating customer:", error);
       throw error;
     }
-    return data;
+
+    if (!insertedData || insertedData.length === 0) {
+      throw new Error(
+        "Customer was not created properly. Please check your permissions.",
+      );
+    }
+
+    return insertedData[0];
   },
 
   async updateCustomer(
     id: number,
     customer: Partial<Customer>,
   ): Promise<Customer> {
-    const { data, error } = await supabase
+    const { data: updatedData, error } = await supabase
       .from("customers")
       .update({ ...customer, updated_at: new Date().toISOString() })
       .eq("id", id)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error("Error updating customer:", error);
       throw error;
     }
-    return data;
+
+    if (!updatedData || updatedData.length === 0) {
+      throw new Error(
+        "Customer was not updated. It may not exist or you lack UPDATE permissions.",
+      );
+    }
+
+    return updatedData[0];
   },
 
   async deleteCustomer(id: number): Promise<void> {

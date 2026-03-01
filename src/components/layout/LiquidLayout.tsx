@@ -10,7 +10,6 @@ import {
   PackageSearch,
   Settings,
   UserRoundSearch,
-  Users,
 } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
@@ -30,7 +29,6 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { path: "/", label: "Overview", icon: LayoutDashboard },
-  { path: "/staff", label: "Staff", icon: Users },
   { path: "/customers", label: "Customers", icon: UserRoundSearch },
   { path: "/orders", label: "Orders", icon: PackageSearch },
   { path: "/expenses", label: "Expenses", icon: HandCoins },

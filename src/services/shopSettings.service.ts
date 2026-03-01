@@ -16,38 +16,53 @@ export const shopSettingsService = {
   },
 
   async updateSettings(settings: Partial<ShopSettings>): Promise<ShopSettings> {
-    const { data, error } = await supabase
+    const { data: updatedData, error } = await supabase
       .from("shop_settings")
       .update(settings)
       .eq("id", settings.id)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error("Error updating shop settings:", error);
       throw error;
     }
-    return data;
+
+    if (!updatedData || updatedData.length === 0) {
+      throw new Error(
+        "Shop settings were not updated. They may not exist or you lack UPDATE permissions.",
+      );
+    }
+
+    return updatedData[0];
   },
 
   async createSettings(
     settings: Omit<ShopSettings, "id" | "created_at" | "updated_at">,
   ): Promise<ShopSettings> {
-    const { data, error } = await supabase
+    const { data: insertedData, error } = await supabase
       .from("shop_settings")
       .insert(settings)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error("Error creating shop settings:", error);
       throw error;
     }
-    return data;
+
+    if (!insertedData || insertedData.length === 0) {
+      throw new Error(
+        "Shop settings was not created properly. Please check your permissions.",
+      );
+    }
+
+    return insertedData[0];
   },
 
   async deleteSettings(id: number): Promise<void> {
-    const { error } = await supabase.from("shop_settings").delete().eq("id", id);
+    const { error } = await supabase
+      .from("shop_settings")
+      .delete()
+      .eq("id", id);
 
     if (error) {
       console.error("Error deleting shop settings:", error);

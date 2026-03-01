@@ -152,14 +152,14 @@ ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sync_log ENABLE ROW LEVEL SECURITY;
 
--- ── Authenticated users: SELECT only (read-only for PWA) ──
-CREATE POLICY "Authenticated users read shop_settings" ON shop_settings FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Authenticated users read users" ON users FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Authenticated users read customers" ON customers FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Authenticated users read orders" ON orders FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Authenticated users read order_items" ON order_items FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Authenticated users read expenses" ON expenses FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Authenticated users read sync_log" ON sync_log FOR SELECT TO authenticated USING (true);
+-- ── Authenticated users: full CRUD ──
+CREATE POLICY "Authenticated users manage shop_settings" ON shop_settings FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users manage users" ON users FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users manage customers" ON customers FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users manage orders" ON orders FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users manage order_items" ON order_items FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users manage expenses" ON expenses FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users manage sync_log" ON sync_log FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- ── Service role: full CRUD (used by Tauri sync engine) ──
 CREATE POLICY "Service role manage shop_settings" ON shop_settings FOR ALL TO service_role USING (true) WITH CHECK (true);

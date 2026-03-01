@@ -30,34 +30,49 @@ export const usersService = {
   },
 
   async createUser(
-    user: Omit<User, "id" | "created_at" | "updated_at" | "synced_from_device_at">,
+    user: Omit<
+      User,
+      "id" | "created_at" | "updated_at" | "synced_from_device_at"
+    >,
   ): Promise<User> {
-    const { data, error } = await supabase
+    const { data: insertedData, error } = await supabase
       .from("users")
       .insert(user)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error("Error creating user:", error);
       throw error;
     }
-    return data;
+
+    if (!insertedData || insertedData.length === 0) {
+      throw new Error(
+        "User was not created properly. Please check your permissions.",
+      );
+    }
+
+    return insertedData[0];
   },
 
   async updateUser(id: number, user: Partial<User>): Promise<User> {
-    const { data, error } = await supabase
+    const { data: updatedData, error } = await supabase
       .from("users")
       .update({ ...user, updated_at: new Date().toISOString() })
       .eq("id", id)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error("Error updating user:", error);
       throw error;
     }
-    return data;
+
+    if (!updatedData || updatedData.length === 0) {
+      throw new Error(
+        "User was not updated. It may not exist or you lack UPDATE permissions.",
+      );
+    }
+
+    return updatedData[0];
   },
 
   async deleteUser(id: number): Promise<void> {

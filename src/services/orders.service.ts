@@ -54,16 +54,23 @@ export const ordersService = {
       "id" | "order_id" | "created_at" | "updated_at" | "deleted_at"
     >[],
   ): Promise<OrderWithItems> {
-    const { data: newOrder, error: orderError } = await supabase
+    const { data: newOrderData, error: orderError } = await supabase
       .from("orders")
       .insert(order)
-      .select()
-      .single();
+      .select();
 
     if (orderError) {
       console.error("Error creating order:", orderError);
       throw orderError;
     }
+
+    if (!newOrderData || newOrderData.length === 0) {
+      throw new Error(
+        "Order was not created properly. Please check your permissions.",
+      );
+    }
+
+    const newOrder = newOrderData[0];
 
     if (items && items.length > 0) {
       const itemsToInsert = items.map((item) => ({
@@ -85,18 +92,24 @@ export const ordersService = {
   },
 
   async updateOrder(id: number, order: Partial<Order>): Promise<Order> {
-    const { data, error } = await supabase
+    const { data: updatedData, error } = await supabase
       .from("orders")
       .update({ ...order, updated_at: new Date().toISOString() })
       .eq("id", id)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error("Error updating order:", error);
       throw error;
     }
-    return data;
+
+    if (!updatedData || updatedData.length === 0) {
+      throw new Error(
+        "Order was not updated. It may not exist or you lack UPDATE permissions.",
+      );
+    }
+
+    return updatedData[0];
   },
 
   async deleteOrder(id: number): Promise<void> {
@@ -116,35 +129,47 @@ export const orderItemsService = {
   async addOrderItem(
     item: Omit<OrderItem, "id" | "created_at" | "updated_at" | "deleted_at">,
   ): Promise<OrderItem> {
-    const { data, error } = await supabase
+    const { data: insertedData, error } = await supabase
       .from("order_items")
       .insert(item)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error("Error adding order item:", error);
       throw error;
     }
-    return data;
+
+    if (!insertedData || insertedData.length === 0) {
+      throw new Error(
+        "Order item was not created properly. Please check your permissions.",
+      );
+    }
+
+    return insertedData[0];
   },
 
   async updateOrderItem(
     id: number,
     item: Partial<OrderItem>,
   ): Promise<OrderItem> {
-    const { data, error } = await supabase
+    const { data: updatedData, error } = await supabase
       .from("order_items")
       .update({ ...item, updated_at: new Date().toISOString() })
       .eq("id", id)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error("Error updating order item:", error);
       throw error;
     }
-    return data;
+
+    if (!updatedData || updatedData.length === 0) {
+      throw new Error(
+        "Order item was not updated. It may not exist or you lack UPDATE permissions.",
+      );
+    }
+
+    return updatedData[0];
   },
 
   async deleteOrderItem(id: number): Promise<void> {

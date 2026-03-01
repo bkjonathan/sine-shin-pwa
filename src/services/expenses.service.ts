@@ -34,32 +34,44 @@ export const expensesService = {
   async createExpense(
     expense: Omit<Expense, "id" | "created_at" | "updated_at" | "deleted_at">,
   ): Promise<Expense> {
-    const { data, error } = await supabase
+    const { data: insertedData, error } = await supabase
       .from("expenses")
       .insert(expense)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error("Error creating expense:", error);
       throw error;
     }
-    return data;
+
+    if (!insertedData || insertedData.length === 0) {
+      throw new Error(
+        "Expense was not created properly. Please check your permissions.",
+      );
+    }
+
+    return insertedData[0];
   },
 
   async updateExpense(id: number, expense: Partial<Expense>): Promise<Expense> {
-    const { data, error } = await supabase
+    const { data: updatedData, error } = await supabase
       .from("expenses")
       .update({ ...expense, updated_at: new Date().toISOString() })
       .eq("id", id)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error("Error updating expense:", error);
       throw error;
     }
-    return data;
+
+    if (!updatedData || updatedData.length === 0) {
+      throw new Error(
+        "Expense was not updated. It may not exist or you lack UPDATE permissions.",
+      );
+    }
+
+    return updatedData[0];
   },
 
   async deleteExpense(id: number): Promise<void> {

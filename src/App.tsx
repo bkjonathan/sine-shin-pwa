@@ -10,7 +10,6 @@ import { LiquidLayout } from "./components/layout/LiquidLayout";
 import { Spinner } from "@/components/ui/spinner";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
-import { StaffPage } from "./pages/StaffPage";
 import { CustomersPage } from "./pages/CustomersPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { ExpensesPage } from "./pages/ExpensesPage";
@@ -48,7 +47,6 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<LiquidLayout />}>
               <Route index element={<DashboardPage />} />
-              <Route path="staff" element={<StaffPage />} />
               <Route path="customers" element={<CustomersPage />} />
               <Route path="orders" element={<OrdersPage />} />
               <Route path="expenses" element={<ExpensesPage />} />

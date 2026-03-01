@@ -1,11 +1,23 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
 import { motion } from "framer-motion";
 import { PackagePlus, Plus, RefreshCcw, Trash2, UserPen } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +42,7 @@ import {
 import type { Customer, Order, OrderItem } from "@/types/database";
 
 interface OrderItemFormState {
+  id?: number;
   key: string;
   product_url: string;
   product_qty: string;
@@ -149,7 +162,8 @@ const hasItemValue = (item: OrderItemFormState) =>
   item.product_weight.trim();
 
 const mapOrderItemToForm = (item: OrderItem): OrderItemFormState => ({
-  key: makeItemKey(),
+  id: item.id,
+  key: item.id.toString(),
   product_url: item.product_url ?? "",
   product_qty: item.product_qty?.toString() ?? "",
   price: item.price?.toString() ?? "",
@@ -255,39 +269,66 @@ export const OrdersPage = () => {
       synced_from_device_at: null,
     };
 
-    const itemPayloads: Omit<
-      OrderItem,
-      "id" | "order_id" | "created_at" | "updated_at" | "deleted_at"
-    >[] = itemForms
-      .filter(hasItemValue)
-      .map((item) => ({
-        product_url: toNullableString(item.product_url),
-        product_qty: toNullableInt(item.product_qty),
-        price: toNullableNumber(item.price),
-        product_weight: toNullableNumber(item.product_weight),
-        synced_from_device_at: null,
-      }));
+    const itemsToProcess = itemForms.filter(hasItemValue).map((item) => ({
+      id: item.id,
+      product_url: toNullableString(item.product_url),
+      product_qty: toNullableInt(item.product_qty),
+      price: toNullableNumber(item.price),
+      product_weight: toNullableNumber(item.product_weight),
+      synced_from_device_at: null,
+    }));
 
     try {
       if (editingId === null) {
+        // Create new order and all items
+        const itemPayloads = itemsToProcess.map(({ id, ...rest }) => rest);
         await ordersService.createOrder(orderPayload, itemPayloads);
       } else {
         await ordersService.updateOrder(editingId, orderPayload);
 
         const existingOrder = await ordersService.getOrderById(editingId);
-        if (existingOrder?.order_items?.length) {
+        const existingItemIds =
+          existingOrder?.order_items?.map((i) => i.id) || [];
+
+        const currentItemIds = itemsToProcess
+          .filter((i) => i.id !== undefined)
+          .map((i) => i.id as number);
+
+        // Items to delete
+        const idsToDelete = existingItemIds.filter(
+          (id) => !currentItemIds.includes(id),
+        );
+        if (idsToDelete.length) {
           await Promise.all(
-            existingOrder.order_items.map((item) =>
-              orderItemsService.deleteOrderItem(item.id),
-            ),
+            idsToDelete.map((id) => orderItemsService.deleteOrderItem(id)),
           );
         }
 
-        if (itemPayloads.length) {
+        // Items to update
+        const itemsToUpdate = itemsToProcess.filter((i) => i.id !== undefined);
+        if (itemsToUpdate.length) {
           await Promise.all(
-            itemPayloads.map((item) =>
-              orderItemsService.addOrderItem({ ...item, order_id: editingId }),
-            ),
+            itemsToUpdate.map((item) => {
+              const { id, ...updatePayload } = item;
+              return orderItemsService.updateOrderItem(
+                id as number,
+                updatePayload,
+              );
+            }),
+          );
+        }
+
+        // Items to create
+        const itemsToCreate = itemsToProcess.filter((i) => i.id === undefined);
+        if (itemsToCreate.length) {
+          await Promise.all(
+            itemsToCreate.map((item) => {
+              const { id, ...createPayload } = item;
+              return orderItemsService.addOrderItem({
+                ...createPayload,
+                order_id: editingId,
+              });
+            }),
           );
         }
       }
@@ -364,9 +405,15 @@ export const OrdersPage = () => {
     }
   };
 
-  const updateItem = (key: string, field: keyof OrderItemFormState, value: string) => {
+  const updateItem = (
+    key: string,
+    field: keyof OrderItemFormState,
+    value: string,
+  ) => {
     setItemForms((current) =>
-      current.map((item) => (item.key === key ? { ...item, [field]: value } : item)),
+      current.map((item) =>
+        item.key === key ? { ...item, [field]: value } : item,
+      ),
     );
   };
 
@@ -404,7 +451,9 @@ export const OrdersPage = () => {
 
       <Card className="glass-panel border-white/60">
         <CardHeader>
-          <CardTitle>{editingId === null ? "Create Order" : "Edit Order"}</CardTitle>
+          <CardTitle>
+            {editingId === null ? "Create Order" : "Edit Order"}
+          </CardTitle>
           <CardDescription>
             {editingId === null
               ? "Create an order with one or more item rows."
@@ -420,7 +469,10 @@ export const OrdersPage = () => {
                   id="order-id"
                   value={form.order_id}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, order_id: event.target.value }))
+                    setForm((current) => ({
+                      ...current,
+                      order_id: event.target.value,
+                    }))
                   }
                   placeholder="SSO-001"
                 />
@@ -441,7 +493,10 @@ export const OrdersPage = () => {
                 >
                   <NativeSelectOption value="">No customer</NativeSelectOption>
                   {customers.map((customer) => (
-                    <NativeSelectOption key={customer.id} value={customer.id.toString()}>
+                    <NativeSelectOption
+                      key={customer.id}
+                      value={customer.id.toString()}
+                    >
                       {customer.name}
                     </NativeSelectOption>
                   ))}
@@ -454,7 +509,10 @@ export const OrdersPage = () => {
                   id="order-status"
                   value={form.status}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, status: event.target.value }))
+                    setForm((current) => ({
+                      ...current,
+                      status: event.target.value,
+                    }))
                   }
                   placeholder="pending"
                 />
@@ -466,7 +524,10 @@ export const OrdersPage = () => {
                   id="order-from"
                   value={form.order_from}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, order_from: event.target.value }))
+                    setForm((current) => ({
+                      ...current,
+                      order_from: event.target.value,
+                    }))
                   }
                   placeholder="Taobao"
                 />
@@ -498,7 +559,10 @@ export const OrdersPage = () => {
                   step="0.01"
                   value={form.service_fee}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, service_fee: event.target.value }))
+                    setForm((current) => ({
+                      ...current,
+                      service_fee: event.target.value,
+                    }))
                   }
                 />
               </div>
@@ -517,7 +581,9 @@ export const OrdersPage = () => {
                   }
                 >
                   <NativeSelectOption value="fixed">Fixed</NativeSelectOption>
-                  <NativeSelectOption value="percent">Percent</NativeSelectOption>
+                  <NativeSelectOption value="percent">
+                    Percent
+                  </NativeSelectOption>
                 </NativeSelect>
               </div>
 
@@ -579,7 +645,10 @@ export const OrdersPage = () => {
                   step="0.01"
                   value={form.cargo_fee}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, cargo_fee: event.target.value }))
+                    setForm((current) => ({
+                      ...current,
+                      cargo_fee: event.target.value,
+                    }))
                   }
                 />
               </div>
@@ -593,7 +662,10 @@ export const OrdersPage = () => {
                   type="date"
                   value={form.order_date}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, order_date: event.target.value }))
+                    setForm((current) => ({
+                      ...current,
+                      order_date: event.target.value,
+                    }))
                   }
                 />
               </div>
@@ -679,7 +751,12 @@ export const OrdersPage = () => {
             <div className="space-y-3 rounded-2xl border border-white/55 bg-white/40 p-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium">Order Items</p>
-                <Button type="button" variant="outline" size="sm" onClick={addItemRow}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addItemRow}
+                >
                   <Plus className="size-4" />
                   Add Item
                 </Button>
@@ -721,7 +798,11 @@ export const OrdersPage = () => {
                       step="0.01"
                       value={item.product_weight}
                       onChange={(event) =>
-                        updateItem(item.key, "product_weight", event.target.value)
+                        updateItem(
+                          item.key,
+                          "product_weight",
+                          event.target.value,
+                        )
                       }
                     />
                     <Button
@@ -809,7 +890,10 @@ export const OrdersPage = () => {
               )}
 
               {orders.map((order) => (
-                <TableRow key={order.id} className="border-white/35 hover:bg-white/30">
+                <TableRow
+                  key={order.id}
+                  className="border-white/35 hover:bg-white/30"
+                >
                   <TableCell className="font-medium">
                     {order.order_id || `ID: ${order.id}`}
                   </TableCell>
@@ -820,7 +904,9 @@ export const OrdersPage = () => {
                   </TableCell>
                   <TableCell>{order.status || "-"}</TableCell>
                   <TableCell>{order.order_items.length}</TableCell>
-                  <TableCell>${calculateOrderTotal(order).toLocaleString()}</TableCell>
+                  <TableCell>
+                    ${calculateOrderTotal(order).toLocaleString()}
+                  </TableCell>
                   <TableCell>
                     {order.order_date
                       ? new Date(order.order_date).toLocaleDateString()
