@@ -63,10 +63,10 @@ BEGIN
             ELSE 
                 COALESCE(service_fee, 0)
         END
-        + COALESCE(product_discount, 0)
-        + CASE WHEN shipping_fee_by_shop = TRUE THEN COALESCE(shipping_fee, 0) ELSE 0 END
-        + CASE WHEN delivery_fee_by_shop = TRUE THEN COALESCE(delivery_fee, 0) ELSE 0 END
-        + CASE WHEN cargo_fee_by_shop = TRUE AND exclude_cargo_fee != TRUE  THEN COALESCE(cargo_fee, 0) ELSE 0 END
+        - COALESCE(product_discount, 0)
+        - CASE WHEN shipping_fee_by_shop = TRUE THEN COALESCE(shipping_fee, 0) ELSE 0 END
+        - CASE WHEN delivery_fee_by_shop = TRUE THEN COALESCE(delivery_fee, 0) ELSE 0 END
+        - CASE WHEN cargo_fee_by_shop = TRUE AND exclude_cargo_fee != TRUE  THEN COALESCE(cargo_fee, 0) ELSE 0 END
     ), 0.0)
     FROM orders 
     WHERE %s
