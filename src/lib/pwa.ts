@@ -1,11 +1,14 @@
+import { registerSW } from "virtual:pwa-register";
+
 export function registerServiceWorker() {
-  if (!import.meta.env.PROD || !("serviceWorker" in navigator)) {
+  if (!import.meta.env.PROD) {
     return;
   }
 
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch((error) => {
+  registerSW({
+    immediate: true,
+    onRegisterError(error) {
       console.error("Service worker registration failed:", error);
-    });
+    },
   });
 }
