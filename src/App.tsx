@@ -11,6 +11,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { CustomersPage } from "./pages/CustomersPage";
+import { CustomerFormPage } from "./pages/CustomerFormPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { ExpensesPage } from "./pages/ExpensesPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -48,6 +49,11 @@ function App() {
             <Route path="/" element={<LiquidLayout />}>
               <Route index element={<DashboardPage />} />
               <Route path="customers" element={<CustomersPage />} />
+              <Route path="customers/new" element={<CustomerFormPage />} />
+              <Route
+                path="customers/:customerId/edit"
+                element={<CustomerFormPage />}
+              />
               <Route path="orders" element={<OrdersPage />} />
               <Route path="expenses" element={<ExpensesPage />} />
               <Route path="settings" element={<SettingsPage />} />

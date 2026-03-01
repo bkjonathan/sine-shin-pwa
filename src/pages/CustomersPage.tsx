@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, RefreshCcw, Trash2, UserPen } from "lucide-react";
+import { CirclePlus, RefreshCcw } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -12,65 +13,116 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { customersService } from "@/services/customers.service";
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { CustomerFiltersBar } from "@/components/customers/CustomerFiltersBar";
+import { CustomerStatsCards } from "@/components/customers/CustomerStatsCards";
+import { CustomersTable } from "@/components/customers/CustomersTable";
+import {
+  customersService,
+  type CustomerStatsSummary,
+} from "@/services/customers.service";
 import type { Customer } from "@/types/database";
 
-interface CustomerFormState {
-  customer_id: string;
-  name: string;
-  phone: string;
-  address: string;
-  city: string;
-  social_media_url: string;
-  platform: string;
-}
+const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
 
-const emptyCustomerForm: CustomerFormState = {
-  customer_id: "",
-  name: "",
-  phone: "",
-  address: "",
-  city: "",
-  social_media_url: "",
-  platform: "",
-};
+const getPaginationPages = (
+  currentPage: number,
+  totalPages: number,
+): Array<number | "ellipsis"> => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
 
-const toNullable = (value: string): string | null => {
-  const trimmed = value.trim();
-  return trimmed.length === 0 ? null : trimmed;
+  const pages: Array<number | "ellipsis"> = [1];
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+
+  if (start > 2) {
+    pages.push("ellipsis");
+  }
+
+  for (let page = start; page <= end; page += 1) {
+    pages.push(page);
+  }
+
+  if (end < totalPages - 1) {
+    pages.push("ellipsis");
+  }
+
+  pages.push(totalPages);
+  return pages;
 };
 
 export const CustomersPage = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [form, setForm] = useState<CustomerFormState>(emptyCustomerForm);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [customerStats, setCustomerStats] = useState<CustomerStatsSummary>({
+    total: 0,
+    withPhone: 0,
+    withPlatform: 0,
+    withSocialUrl: 0,
+  });
+  const [filteredCustomersCount, setFilteredCustomersCount] = useState(0);
+  const [cityOptions, setCityOptions] = useState<string[]>([]);
+  const [platformOptions, setPlatformOptions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [cityFilter, setCityFilter] = useState("all");
+  const [platformFilter, setPlatformFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE_OPTIONS[0]);
 
   const loadCustomers = useCallback(async () => {
+    setIsLoading(true);
     try {
       setError(null);
-      const data = await customersService.getCustomers();
+      const { data, count } = await customersService.getCustomersPage({
+        page: currentPage,
+        pageSize,
+        searchQuery,
+        cityFilter,
+        platformFilter,
+      });
       setCustomers(data);
+      setFilteredCustomersCount(count);
     } catch (loadError) {
       const message =
         loadError instanceof Error
           ? loadError.message
           : "Failed to load customers.";
       setError(message);
+      setCustomers([]);
+      setFilteredCustomersCount(0);
     } finally {
       setIsLoading(false);
+    }
+  }, [cityFilter, currentPage, pageSize, platformFilter, searchQuery]);
+
+  const loadMetadata = useCallback(async () => {
+    try {
+      const [stats, filterOptions] = await Promise.all([
+        customersService.getCustomerStats(),
+        customersService.getCustomerFilterOptions(),
+      ]);
+
+      setCustomerStats(stats);
+      setCityOptions(filterOptions.cities);
+      setPlatformOptions(filterOptions.platforms);
+    } catch (loadError) {
+      const message =
+        loadError instanceof Error
+          ? loadError.message
+          : "Failed to load customer metadata.";
+      setError(message);
     }
   }, []);
 
@@ -78,73 +130,43 @@ export const CustomersPage = () => {
     void loadCustomers();
   }, [loadCustomers]);
 
-  const handleReset = () => {
-    setEditingId(null);
-    setForm(emptyCustomerForm);
-    setError(null);
+  useEffect(() => {
+    void loadMetadata();
+  }, [loadMetadata]);
+
+  const hasActiveFilters =
+    searchQuery.trim().length > 0 || cityFilter !== "all" || platformFilter !== "all";
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [cityFilter, platformFilter, searchQuery, pageSize]);
+
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(filteredCustomersCount / pageSize));
+  }, [filteredCustomersCount, pageSize]);
+
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  useEffect(() => {
+    if (currentPage !== safeCurrentPage) {
+      setCurrentPage(safeCurrentPage);
+    }
+  }, [currentPage, safeCurrentPage]);
+
+  const visibleStart =
+    filteredCustomersCount === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1;
+  const visibleEnd = Math.min(safeCurrentPage * pageSize, filteredCustomersCount);
+  const paginationPages = getPaginationPages(safeCurrentPage, totalPages);
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setCityFilter("all");
+    setPlatformFilter("all");
+    setCurrentPage(1);
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const name = form.name.trim();
-    if (!name) {
-      setError("Customer name is required.");
-      return;
-    }
-
-    setError(null);
-    setIsSaving(true);
-
-    try {
-      if (editingId === null) {
-        await customersService.createCustomer({
-          customer_id: toNullable(form.customer_id),
-          name,
-          phone: toNullable(form.phone),
-          address: toNullable(form.address),
-          city: toNullable(form.city),
-          social_media_url: toNullable(form.social_media_url),
-          platform: toNullable(form.platform),
-          synced_from_device_at: null,
-        });
-      } else {
-        await customersService.updateCustomer(editingId, {
-          customer_id: toNullable(form.customer_id),
-          name,
-          phone: toNullable(form.phone),
-          address: toNullable(form.address),
-          city: toNullable(form.city),
-          social_media_url: toNullable(form.social_media_url),
-          platform: toNullable(form.platform),
-        });
-      }
-
-      await loadCustomers();
-      handleReset();
-    } catch (submitError) {
-      const message =
-        submitError instanceof Error
-          ? submitError.message
-          : "Failed to save customer.";
-      setError(message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleEdit = (customer: Customer) => {
-    setEditingId(customer.id);
-    setForm({
-      customer_id: customer.customer_id ?? "",
-      name: customer.name,
-      phone: customer.phone ?? "",
-      address: customer.address ?? "",
-      city: customer.city ?? "",
-      social_media_url: customer.social_media_url ?? "",
-      platform: customer.platform ?? "",
-    });
-    setError(null);
+  const handleRefresh = async () => {
+    await Promise.all([loadCustomers(), loadMetadata()]);
   };
 
   const handleDelete = async (id: number) => {
@@ -154,19 +176,19 @@ export const CustomersPage = () => {
     }
 
     setError(null);
+    setDeletingId(id);
 
     try {
       await customersService.deleteCustomer(id);
-      if (editingId === id) {
-        handleReset();
-      }
-      await loadCustomers();
+      await Promise.all([loadCustomers(), loadMetadata()]);
     } catch (deleteError) {
       const message =
         deleteError instanceof Error
           ? deleteError.message
           : "Failed to delete customer.";
       setError(message);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -175,231 +197,177 @@ export const CustomersPage = () => {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
-      className="mx-auto max-w-6xl space-y-6"
+      className="mx-auto max-w-7xl space-y-6 pb-8"
     >
-      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Customers</h1>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-1">
+          <p className="text-muted-foreground text-xs font-semibold tracking-[0.2em] uppercase">
+            Customer Management
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Customer Directory
+          </h1>
           <p className="text-muted-foreground text-sm">
-            Full customer CRUD lifecycle.
+            Search, filter, and maintain customer records from a focused directory view.
           </p>
         </div>
-        <Badge variant="outline" className="glass-pill w-fit text-xs">
-          {customers.length} customers
-        </Badge>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline" className="glass-pill w-fit text-xs">
+            {customerStats.total.toLocaleString()} total records
+          </Badge>
+          <Button variant="outline" size="sm" onClick={() => void handleRefresh()}>
+            <RefreshCcw className="size-4" />
+            Refresh
+          </Button>
+          <Button asChild size="sm">
+            <Link to="/customers/new">
+              <CirclePlus className="size-4" />
+              Create Customer
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[400px_1fr]">
-        <Card className="glass-panel border-white/60">
-          <CardHeader>
-            <CardTitle>
-              {editingId === null ? "Create Customer" : "Edit Customer"}
-            </CardTitle>
-            <CardDescription>
-              {editingId === null
-                ? "Capture a new customer profile."
-                : "Update selected customer details."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              <div className="space-y-2">
-                <Label htmlFor="customer-id">Customer ID</Label>
-                <Input
-                  id="customer-id"
-                  value={form.customer_id}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      customer_id: event.target.value,
-                    }))
-                  }
-                  placeholder="SSC-001"
-                />
-              </div>
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-              <div className="space-y-2">
-                <Label htmlFor="customer-name">Name</Label>
-                <Input
-                  id="customer-name"
-                  value={form.name}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, name: event.target.value }))
-                  }
-                  required
-                />
-              </div>
+      <CustomerStatsCards stats={customerStats} />
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="customer-phone">Phone</Label>
-                  <Input
-                    id="customer-phone"
-                    value={form.phone}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, phone: event.target.value }))
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="customer-city">City</Label>
-                  <Input
-                    id="customer-city"
-                    value={form.city}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, city: event.target.value }))
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="customer-address">Address</Label>
-                <Input
-                  id="customer-address"
-                  value={form.address}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, address: event.target.value }))
-                  }
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="customer-platform">Platform</Label>
-                  <Input
-                    id="customer-platform"
-                    value={form.platform}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, platform: event.target.value }))
-                    }
-                    placeholder="Facebook"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="customer-social">Social URL</Label>
-                  <Input
-                    id="customer-social"
-                    value={form.social_media_url}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        social_media_url: event.target.value,
-                      }))
-                    }
-                    placeholder="https://..."
-                  />
-                </div>
-              </div>
-
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <div className="flex flex-wrap gap-2">
-                <Button type="submit" disabled={isSaving}>
-                  <UserPen className="size-4" />
-                  {isSaving
-                    ? "Saving..."
-                    : editingId === null
-                      ? "Create Customer"
-                      : "Update Customer"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleReset}
-                  disabled={isSaving}
-                >
-                  <Plus className="size-4" />
-                  New
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-panel border-white/60">
-          <CardHeader className="flex-row items-center justify-between space-y-0">
+      <Card className="glass-panel border-white/60">
+        <CardHeader className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <CardTitle className="text-xl">Customer Records</CardTitle>
-              <CardDescription>Read, edit, and remove customer profiles.</CardDescription>
+              <CardDescription>
+                Results update instantly from search and filters.
+              </CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={() => void loadCustomers()}>
-              <RefreshCcw className="size-4" />
-              Refresh
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow className="border-white/40 hover:bg-transparent">
-                  <TableHead>Customer ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>City</TableHead>
-                  <TableHead>Platform</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="py-4 text-center">
-                      Loading customers...
-                    </TableCell>
-                  </TableRow>
-                )}
+            <Badge variant="outline" className="glass-pill text-xs">
+              Showing {filteredCustomersCount.toLocaleString()} of{" "}
+              {customerStats.total.toLocaleString()}
+            </Badge>
+          </div>
 
-                {!isLoading && customers.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="py-4 text-center">
-                      No customers found.
-                    </TableCell>
-                  </TableRow>
-                )}
+          <CustomerFiltersBar
+            searchQuery={searchQuery}
+            cityFilter={cityFilter}
+            platformFilter={platformFilter}
+            cityOptions={cityOptions}
+            platformOptions={platformOptions}
+            hasActiveFilters={hasActiveFilters}
+            onSearchChange={setSearchQuery}
+            onCityChange={setCityFilter}
+            onPlatformChange={setPlatformFilter}
+            onClear={handleClearFilters}
+          />
+        </CardHeader>
+        <CardContent>
+          <CustomersTable
+            customers={customers}
+            totalCustomers={customerStats.total}
+            isLoading={isLoading}
+            deletingId={deletingId}
+            onDelete={(id) => void handleDelete(id)}
+          />
 
-                {customers.map((customer) => (
-                  <TableRow
-                    key={customer.id}
-                    className="border-white/35 hover:bg-white/30"
+          {!isLoading && filteredCustomersCount > 0 && (
+            <div className="mt-5 flex flex-col gap-4 border-t border-white/50 pt-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-muted-foreground text-sm">
+                  Showing {visibleStart.toLocaleString()}-
+                  {visibleEnd.toLocaleString()} of{" "}
+                  {filteredCustomersCount.toLocaleString()} records
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <label htmlFor="page-size" className="text-muted-foreground text-sm">
+                    Rows:
+                  </label>
+                  <select
+                    id="page-size"
+                    value={String(pageSize)}
+                    onChange={(event) => setPageSize(Number(event.target.value))}
+                    className="focus-visible:border-ring focus-visible:ring-ring/50 border-white/60 h-9 rounded-xl border bg-white/48 px-3 text-sm shadow-[0_10px_28px_-24px_rgba(15,23,42,0.75)] backdrop-blur-xl outline-none focus-visible:ring-[3px]"
                   >
-                    <TableCell>{customer.customer_id || "-"}</TableCell>
-                    <TableCell className="font-medium">{customer.name}</TableCell>
-                    <TableCell>{customer.phone || "-"}</TableCell>
-                    <TableCell>{customer.city || "-"}</TableCell>
-                    <TableCell>{customer.platform || "-"}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(customer)}
+                    {PAGE_SIZE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <Pagination className="mx-0 w-auto justify-start xl:justify-end">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        if (safeCurrentPage > 1) {
+                          setCurrentPage(safeCurrentPage - 1);
+                        }
+                      }}
+                      className={
+                        safeCurrentPage === 1
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+
+                  {paginationPages.map((page, index) => {
+                    if (page === "ellipsis") {
+                      return (
+                        <PaginationItem key={`ellipsis-${index}`}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      );
+                    }
+
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          isActive={page === safeCurrentPage}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            setCurrentPage(page);
+                          }}
                         >
-                          <UserPen className="size-4" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => void handleDelete(customer.id)}
-                        >
-                          <Trash2 className="size-4" />
-                          Delete
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        if (safeCurrentPage < totalPages) {
+                          setCurrentPage(safeCurrentPage + 1);
+                        }
+                      }}
+                      className={
+                        safeCurrentPage === totalPages
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </motion.div>
   );
 };

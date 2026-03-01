@@ -84,7 +84,7 @@ export const LiquidLayout: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="liquid-page">
+    <div className="liquid-page h-screen">
       <div className="liquid-orb left-[-120px] top-[-80px] size-80 bg-sky-400/35" />
       <div className="liquid-orb liquid-orb-drift right-[-90px] top-[18%] size-64 bg-cyan-300/35" />
       <div className="liquid-orb bottom-[-130px] left-[32%] size-96 bg-blue-300/30" />
@@ -133,7 +133,7 @@ export const LiquidLayout: React.FC = () => {
         </SheetContent>
       </Sheet>
 
-      <div className="relative z-10 flex min-h-screen">
+      <div className="relative z-10 flex h-full overflow-hidden">
         <aside className="hidden w-80 shrink-0 p-4 pr-0 md:block">
           <motion.div
             initial={{ opacity: 0, x: -10 }}
@@ -173,7 +173,7 @@ export const LiquidLayout: React.FC = () => {
           </motion.div>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col pb-6">
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto pb-6">
           <header className="glass-panel-strong sticky top-4 z-20 mx-4 mt-4 flex items-center justify-between px-4 py-3 md:mx-6">
             <div className="flex items-center gap-3">
               <Button
