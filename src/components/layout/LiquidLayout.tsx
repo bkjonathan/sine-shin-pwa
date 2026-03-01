@@ -26,6 +26,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navItems = [
   { path: "/", label: "Overview", icon: LayoutDashboard },
@@ -102,22 +103,24 @@ export const LiquidLayout: React.FC = () => {
 
           <div className="glass-panel-strong flex h-full flex-col p-4">
             <ShellBrand />
-            <Separator className="my-4 bg-white/60" />
+            <Separator className="my-4 bg-white/60 dark:bg-white/20" />
             <NavMenu onNavigate={() => setMobileOpen(false)} />
 
             <div className="mt-auto space-y-4">
-              <Separator className="bg-white/60" />
-              <div className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/60 p-3 backdrop-blur-xl">
-                <Avatar className="size-9 border border-white/60 bg-white/75">
-                  <AvatarFallback>
+              <Separator className="bg-white/60 dark:bg-white/20" />
+              <div className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/60 p-3 backdrop-blur-xl dark:border-white/20 dark:bg-slate-900/65 dark:shadow-[0_18px_40px_-30px_rgba(2,6,23,0.95)]">
+                <Avatar className="size-9 border border-white/60 bg-white/75 dark:border-white/25 dark:bg-slate-800/70">
+                  <AvatarFallback className="dark:bg-slate-700/70 dark:text-slate-100">
                     {user?.email?.slice(0, 2).toUpperCase() ?? "SS"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
+                  <p className="truncate text-sm font-medium dark:text-slate-100">
                     {user?.email ?? "Signed in"}
                   </p>
-                  <p className="text-muted-foreground text-xs">Authenticated</p>
+                  <p className="text-muted-foreground text-xs dark:text-slate-300">
+                    Authenticated
+                  </p>
                 </div>
               </div>
               <Button
@@ -142,22 +145,24 @@ export const LiquidLayout: React.FC = () => {
             className="glass-panel-strong sticky top-4 flex h-[calc(100vh-2rem)] flex-col p-4"
           >
             <ShellBrand />
-            <Separator className="my-4 bg-white/60" />
+            <Separator className="my-4 bg-white/60 dark:bg-white/20" />
             <NavMenu />
 
             <div className="mt-auto space-y-4">
-              <Separator className="bg-white/60" />
-              <div className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/60 p-3 backdrop-blur-xl">
-                <Avatar className="size-9 border border-white/60 bg-white/75">
-                  <AvatarFallback>
+              <Separator className="bg-white/60 dark:bg-white/20" />
+              <div className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/60 p-3 backdrop-blur-xl dark:border-white/20 dark:bg-slate-900/65 dark:shadow-[0_18px_40px_-30px_rgba(2,6,23,0.95)]">
+                <Avatar className="size-9 border border-white/60 bg-white/75 dark:border-white/25 dark:bg-slate-800/70">
+                  <AvatarFallback className="dark:bg-slate-700/70 dark:text-slate-100">
                     {user?.email?.slice(0, 2).toUpperCase() ?? "SS"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
+                  <p className="truncate text-sm font-medium dark:text-slate-100">
                     {user?.email ?? "Signed in"}
                   </p>
-                  <p className="text-muted-foreground text-xs">Authenticated</p>
+                  <p className="text-muted-foreground text-xs dark:text-slate-300">
+                    Authenticated
+                  </p>
                 </div>
               </div>
 
@@ -202,6 +207,7 @@ export const LiquidLayout: React.FC = () => {
               >
                 Live
               </Badge>
+              <ThemeToggle className="rounded-full" />
               <Button variant="outline" size="icon-sm" className="rounded-full">
                 <Bell className="size-4" />
                 <span className="sr-only">Notifications</span>

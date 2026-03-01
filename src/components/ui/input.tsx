@@ -8,8 +8,8 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       type={type}
       data-slot="input"
       className={cn(
-        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground border-white/60 h-10 w-full min-w-0 rounded-xl border bg-white/48 px-3.5 py-2 text-base shadow-[0_10px_28px_-24px_rgba(15,23,42,0.75)] backdrop-blur-xl transition-[color,box-shadow,background-color] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-        "focus-visible:border-ring focus-visible:bg-white/70 focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground border-white/60 dark:border-white/25 h-10 w-full min-w-0 rounded-xl border bg-white/48 dark:bg-slate-900/50 px-3.5 py-2 text-base shadow-[0_10px_28px_-24px_rgba(15,23,42,0.75)] dark:shadow-[0_16px_32px_-26px_rgba(2,6,23,0.95)] backdrop-blur-xl transition-[color,box-shadow,background-color] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "focus-visible:border-ring focus-visible:bg-white/70 dark:focus-visible:bg-slate-900/70 focus-visible:ring-ring/50 focus-visible:ring-[3px]",
         "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
         className
       )}

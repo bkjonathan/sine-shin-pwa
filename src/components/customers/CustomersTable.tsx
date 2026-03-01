@@ -48,7 +48,7 @@ export const CustomersTable = ({
   return (
     <Table>
       <TableHeader>
-        <TableRow className="border-white/40 hover:bg-transparent">
+        <TableRow className="border-white/40 hover:bg-transparent dark:border-white/20">
           <TableHead>Customer</TableHead>
           <TableHead>Contact</TableHead>
           <TableHead>Location</TableHead>
@@ -83,7 +83,10 @@ export const CustomersTable = ({
         )}
 
         {customers.map((customer) => (
-          <TableRow key={customer.id} className="border-white/35 hover:bg-white/30">
+          <TableRow
+            key={customer.id}
+            className="border-white/35 hover:bg-white/30 dark:border-white/15 dark:hover:bg-slate-900/45"
+          >
             <TableCell className="whitespace-normal">
               <div className="space-y-0.5">
                 <p className="font-medium">{customer.name}</p>

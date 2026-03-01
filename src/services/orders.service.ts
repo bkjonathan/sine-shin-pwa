@@ -5,16 +5,59 @@ export interface OrderWithItems extends Order {
   order_items: OrderItem[];
 }
 
+interface GetOrdersPageParams {
+  page: number;
+  pageSize: number;
+  searchQuery?: string;
+  statusFilter?: string;
+  sourceFilter?: string;
+}
+
+interface OrdersPageResult {
+  data: OrderWithItems[];
+  count: number;
+}
+
+export interface OrderStatsSummary {
+  total: number;
+  pending: number;
+  completed: number;
+  withCustomer: number;
+}
+
+interface OrderFilterOptions {
+  statuses: string[];
+  orderSources: string[];
+}
+
+const buildSearchFilter = (searchQuery?: string): string | null => {
+  const trimmed = searchQuery?.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const sanitized = trimmed
+    .replaceAll("%", "\\%")
+    .replaceAll("_", "\\_")
+    .replaceAll(",", " ");
+
+  return [
+    `order_id.ilike.%${sanitized}%`,
+    `status.ilike.%${sanitized}%`,
+    `order_from.ilike.%${sanitized}%`,
+  ].join(",");
+};
+
+const orderSelectQuery = `
+        *,
+        order_items (*)
+      `;
+
 export const ordersService = {
   async getOrders(): Promise<OrderWithItems[]> {
     const { data, error } = await supabase
       .from("orders")
-      .select(
-        `
-        *,
-        order_items (*)
-      `,
-      )
+      .select(orderSelectQuery)
       .is("deleted_at", null)
       .is("order_items.deleted_at", null)
       .order("created_at", { ascending: false });
@@ -26,15 +69,147 @@ export const ordersService = {
     return (data || []) as OrderWithItems[];
   },
 
+  async getOrdersPage({
+    page,
+    pageSize,
+    searchQuery,
+    statusFilter,
+    sourceFilter,
+  }: GetOrdersPageParams): Promise<OrdersPageResult> {
+    const safePage = Math.max(1, page);
+    const safePageSize = Math.max(1, pageSize);
+    const from = (safePage - 1) * safePageSize;
+    const to = from + safePageSize - 1;
+    const searchFilter = buildSearchFilter(searchQuery);
+
+    let query = supabase
+      .from("orders")
+      .select(orderSelectQuery, { count: "exact" })
+      .is("deleted_at", null)
+      .is("order_items.deleted_at", null)
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (statusFilter && statusFilter !== "all") {
+      query = query.eq("status", statusFilter);
+    }
+
+    if (sourceFilter && sourceFilter !== "all") {
+      query = query.eq("order_from", sourceFilter);
+    }
+
+    if (searchFilter) {
+      query = query.or(searchFilter);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error("Error fetching paginated orders:", error);
+      throw error;
+    }
+
+    return {
+      data: (data ?? []) as OrderWithItems[],
+      count: count ?? 0,
+    };
+  },
+
+  async getOrderStats(): Promise<OrderStatsSummary> {
+    const [totalResult, pendingResult, completedResult, withCustomerResult] =
+      await Promise.all([
+        supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .is("deleted_at", null),
+        supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .is("deleted_at", null)
+          .eq("status", "pending"),
+        supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .is("deleted_at", null)
+          .eq("status", "completed"),
+        supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .is("deleted_at", null)
+          .not("customer_id", "is", null),
+      ]);
+
+    const statsError =
+      totalResult.error ||
+      pendingResult.error ||
+      completedResult.error ||
+      withCustomerResult.error;
+
+    if (statsError) {
+      console.error("Error fetching order stats:", statsError);
+      throw statsError;
+    }
+
+    return {
+      total: totalResult.count ?? 0,
+      pending: pendingResult.count ?? 0,
+      completed: completedResult.count ?? 0,
+      withCustomer: withCustomerResult.count ?? 0,
+    };
+  },
+
+  async getOrderFilterOptions(): Promise<OrderFilterOptions> {
+    const statusesSet = new Set<string>();
+    const sourcesSet = new Set<string>();
+    const batchSize = 1000;
+    let from = 0;
+
+    while (true) {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("status, order_from")
+        .is("deleted_at", null)
+        .range(from, from + batchSize - 1);
+
+      if (error) {
+        console.error("Error fetching order filter options:", error);
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        break;
+      }
+
+      data.forEach((row) => {
+        const status = row.status?.trim();
+        const orderFrom = row.order_from?.trim();
+
+        if (status) {
+          statusesSet.add(status);
+        }
+
+        if (orderFrom) {
+          sourcesSet.add(orderFrom);
+        }
+      });
+
+      if (data.length < batchSize) {
+        break;
+      }
+
+      from += batchSize;
+    }
+
+    return {
+      statuses: Array.from(statusesSet).sort((a, b) => a.localeCompare(b)),
+      orderSources: Array.from(sourcesSet).sort((a, b) => a.localeCompare(b)),
+    };
+  },
+
   async getOrderById(id: number): Promise<OrderWithItems | null> {
     const { data, error } = await supabase
       .from("orders")
-      .select(
-        `
-        *,
-        order_items (*)
-      `,
-      )
+      .select(orderSelectQuery)
       .eq("id", id)
       .is("deleted_at", null)
       .is("order_items.deleted_at", null)

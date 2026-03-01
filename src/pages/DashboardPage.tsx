@@ -158,21 +158,21 @@ export const DashboardPage = () => {
         maximumFractionDigits: 2,
       })}`,
       icon: DollarSign,
-      bgClass: "bg-[#e1ecfc]/80 backdrop-blur-sm",
+      bgClass: "bg-[#e1ecfc]/80 dark:bg-sky-500/18 backdrop-blur-sm",
       iconBgClass: "bg-sky-500 text-white",
     },
     {
       title: "Total Orders",
       value: `${stats?.total_orders || 0}`,
       icon: ShoppingBag,
-      bgClass: "bg-[#e3dcfa]/80 backdrop-blur-sm",
+      bgClass: "bg-[#e3dcfa]/80 dark:bg-purple-500/18 backdrop-blur-sm",
       iconBgClass: "bg-purple-500 text-white",
     },
     {
       title: "Total Customers",
       value: `${stats?.total_customers || 0}`,
       icon: Users,
-      bgClass: "bg-[#d3ebe1]/80 backdrop-blur-sm",
+      bgClass: "bg-[#d3ebe1]/80 dark:bg-emerald-500/18 backdrop-blur-sm",
       iconBgClass: "bg-emerald-500 text-white",
     },
     {
@@ -182,14 +182,14 @@ export const DashboardPage = () => {
         maximumFractionDigits: 2,
       })}`,
       icon: TrendingUp,
-      bgClass: "bg-[#f9eddf]/80 backdrop-blur-sm",
+      bgClass: "bg-[#f9eddf]/80 dark:bg-orange-500/18 backdrop-blur-sm",
       iconBgClass: "bg-orange-500 text-white",
     },
     {
       title: "Total Cargo Fee",
       value: `฿ ${(stats?.total_cargo_fee || 0).toLocaleString()}`,
       icon: Truck,
-      bgClass: "bg-[#ddeafa]/80 backdrop-blur-sm",
+      bgClass: "bg-[#ddeafa]/80 dark:bg-blue-500/18 backdrop-blur-sm",
       iconBgClass: "bg-blue-500 text-white",
     },
   ];
@@ -231,19 +231,19 @@ export const DashboardPage = () => {
       {/* Header Area */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
-          <Avatar className="size-14 shadow-sm border-[3px] border-white bg-white">
-            <AvatarFallback className="font-bold text-slate-700 bg-sky-100 text-xl">
+          <Avatar className="size-14 shadow-sm border-[3px] border-white/80 bg-white/95 dark:border-white/25 dark:bg-slate-900/70">
+            <AvatarFallback className="font-bold text-slate-700 bg-sky-100 text-xl dark:bg-sky-500/25 dark:text-slate-100">
               {userName.substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
             {greeting} <span className="text-pink-500">{userName}</span>
           </h1>
         </div>
         <Button
           variant="outline"
           size="icon"
-          className="rounded-2xl bg-white shadow-sm border-slate-100 h-11 w-11 text-slate-500 hover:text-red-500 hover:bg-slate-50 shrink-0"
+          className="rounded-2xl bg-white shadow-sm border-slate-100 h-11 w-11 text-slate-500 hover:text-red-500 hover:bg-slate-50 shrink-0 dark:border-white/20 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-red-400"
           onClick={() => void signOut()}
         >
           <LogOut className="size-5" />
@@ -251,7 +251,7 @@ export const DashboardPage = () => {
       </div>
 
       {/* Filters Bar */}
-      <div className="bg-white/95 backdrop-blur-2xl rounded-[1.5rem] p-4 shadow-sm border border-white mb-6">
+      <div className="bg-white/95 backdrop-blur-2xl rounded-[1.5rem] p-4 shadow-sm border border-white mb-6 dark:bg-slate-900/60 dark:border-white/20 dark:shadow-[0_28px_70px_-50px_rgba(2,6,23,0.95)]">
         <div className="flex flex-col gap-4">
           {/* Time Filters */}
           <div className="flex flex-wrap items-center gap-2">
@@ -267,8 +267,8 @@ export const DashboardPage = () => {
                         className={cn(
                           "px-4 py-1.5 rounded-full text-[13px] font-semibold transition-colors flex items-center gap-2",
                           isActive
-                            ? "bg-pink-100 text-pink-600"
-                            : "bg-transparent text-slate-400 border border-slate-200 hover:bg-slate-50 hover:text-slate-600",
+                            ? "bg-pink-100 text-pink-600 dark:bg-pink-500/20 dark:text-pink-300"
+                            : "bg-transparent text-slate-400 border border-slate-200 hover:bg-slate-50 hover:text-slate-600 dark:text-slate-300 dark:border-white/20 dark:hover:bg-slate-800/60 dark:hover:text-slate-100",
                         )}
                       >
                         {isActive && dateRange?.from ? (
@@ -304,8 +304,8 @@ export const DashboardPage = () => {
                   className={cn(
                     "px-4 py-1.5 rounded-full text-[13px] font-semibold transition-colors",
                     isActive
-                      ? "bg-pink-100 text-pink-600"
-                      : "bg-transparent text-slate-400 border border-slate-200 hover:bg-slate-50 hover:text-slate-600",
+                      ? "bg-pink-100 text-pink-600 dark:bg-pink-500/20 dark:text-pink-300"
+                      : "bg-transparent text-slate-400 border border-slate-200 hover:bg-slate-50 hover:text-slate-600 dark:text-slate-300 dark:border-white/20 dark:hover:bg-slate-800/60 dark:hover:text-slate-100",
                   )}
                 >
                   {opt}
@@ -314,14 +314,14 @@ export const DashboardPage = () => {
             })}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] font-semibold text-slate-400 border border-slate-200 hover:bg-slate-50 hover:text-slate-600 ml-auto md:ml-2">
+                <button className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] font-semibold text-slate-400 border border-slate-200 hover:bg-slate-50 hover:text-slate-600 ml-auto md:ml-2 dark:text-slate-300 dark:border-white/20 dark:hover:bg-slate-800/60 dark:hover:text-slate-100">
                   <Calendar className="size-3.5" />
                   {dateField === "order_date" ? "Order Date" : "Created Date"}
                   <ChevronDown className="size-3.5" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="rounded-2xl p-2 min-w-[140px] border-white backdrop-blur-3xl bg-white/95 shadow-sm"
+                className="rounded-2xl p-2 min-w-[140px] border-white backdrop-blur-3xl bg-white/95 shadow-sm dark:border-white/20 dark:bg-slate-900/90 dark:shadow-[0_24px_62px_-42px_rgba(2,6,23,0.95)]"
                 align="end"
               >
                 <DropdownMenuRadioGroup
@@ -332,13 +332,13 @@ export const DashboardPage = () => {
                 >
                   <DropdownMenuRadioItem
                     value="order_date"
-                    className="rounded-xl text-[13px] font-semibold text-slate-600 h-9 data-[state=checked]:text-pink-600 data-[state=checked]:bg-pink-50"
+                    className="rounded-xl text-[13px] font-semibold text-slate-600 h-9 data-[state=checked]:text-pink-600 data-[state=checked]:bg-pink-50 dark:text-slate-200 dark:data-[state=checked]:text-pink-300 dark:data-[state=checked]:bg-pink-500/20"
                   >
                     Order Date
                   </DropdownMenuRadioItem>
                   <DropdownMenuRadioItem
                     value="created_at"
-                    className="rounded-xl text-[13px] font-semibold text-slate-600 h-9 data-[state=checked]:text-pink-600 data-[state=checked]:bg-pink-50"
+                    className="rounded-xl text-[13px] font-semibold text-slate-600 h-9 data-[state=checked]:text-pink-600 data-[state=checked]:bg-pink-50 dark:text-slate-200 dark:data-[state=checked]:text-pink-300 dark:data-[state=checked]:bg-pink-500/20"
                   >
                     Created Date
                   </DropdownMenuRadioItem>
@@ -361,8 +361,8 @@ export const DashboardPage = () => {
                   className={cn(
                     "flex items-center gap-2 px-3 py-1.5 rounded-full text-[13px] font-semibold transition-colors",
                     isActive
-                      ? "bg-slate-100 text-slate-800"
-                      : "bg-transparent text-slate-400 border border-slate-200 hover:bg-slate-50 hover:text-slate-600",
+                      ? "bg-slate-100 text-slate-800 dark:bg-slate-700/70 dark:text-slate-100"
+                      : "bg-transparent text-slate-400 border border-slate-200 hover:bg-slate-50 hover:text-slate-600 dark:text-slate-300 dark:border-white/20 dark:hover:bg-slate-800/60 dark:hover:text-slate-100",
                   )}
                 >
                   <span className={cn("size-2 rounded-full", opt.color)} />
@@ -380,7 +380,7 @@ export const DashboardPage = () => {
           <div
             key={metric.title}
             className={cn(
-              "p-5 rounded-[1.4rem] flex flex-col justify-center border border-white/40",
+              "p-5 rounded-[1.4rem] flex flex-col justify-center border border-white/40 dark:border-white/15",
               metric.bgClass,
             )}
           >
@@ -393,11 +393,11 @@ export const DashboardPage = () => {
               >
                 <metric.icon className="size-4" />
               </div>
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">
                 {metric.title}
               </span>
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-slate-800 truncate">
+            <div className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 truncate">
               {isLoading ? "..." : metric.value}
             </div>
           </div>
@@ -407,14 +407,14 @@ export const DashboardPage = () => {
       {/* Bottom Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
         {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-white/95 backdrop-blur-2xl rounded-[1.5rem] p-6 shadow-sm border border-white min-h-[400px]">
+        <div className="lg:col-span-2 bg-white/95 backdrop-blur-2xl rounded-[1.5rem] p-6 shadow-sm border border-white min-h-[400px] dark:bg-slate-900/60 dark:border-white/20 dark:shadow-[0_28px_70px_-50px_rgba(2,6,23,0.95)]">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-slate-800">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">
               Recent Activity
             </h2>
             <Link
               to="/orders"
-              className="text-sm font-bold text-pink-500 hover:text-pink-600 transition-colors flex items-center gap-1"
+              className="text-sm font-bold text-pink-500 hover:text-pink-600 dark:hover:text-pink-300 transition-colors flex items-center gap-1"
             >
               View All <ChevronRight className="size-4" />
             </Link>
@@ -422,11 +422,11 @@ export const DashboardPage = () => {
 
           <div className="space-y-4">
             {isLoading ? (
-              <div className="text-center py-8 text-slate-500 text-sm font-medium">
+              <div className="text-center py-8 text-slate-500 dark:text-slate-300 text-sm font-medium">
                 Loading activities...
               </div>
             ) : stats?.recent_orders?.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 text-sm font-medium">
+              <div className="text-center py-8 text-slate-500 dark:text-slate-300 text-sm font-medium">
                 No recent orders found.
               </div>
             ) : (
@@ -458,23 +458,23 @@ export const DashboardPage = () => {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-sm font-bold text-slate-800">
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
                           {order.customer_name || "Unknown"}
                         </p>
-                        <p className="text-xs font-semibold text-slate-400 mt-0.5">
+                        <p className="text-xs font-semibold text-slate-400 dark:text-slate-400 mt-0.5">
                           {order.order_id || `ID: ${order.id}`}
                         </p>
                       </div>
                     </div>
                     <div className="text-right flex items-center justify-end gap-6 sm:gap-12 w-1/3">
-                      <span className="text-[15px] font-bold text-slate-800">
+                      <span className="text-[15px] font-bold text-slate-800 dark:text-slate-100">
                         ฿{" "}
                         {order.total_price.toLocaleString(undefined, {
                           minimumFractionDigits: 0,
                           maximumFractionDigits: 2,
                         })}
                       </span>
-                      <span className="text-[13px] font-semibold text-slate-400 w-16 text-right hidden sm:inline-block">
+                      <span className="text-[13px] font-semibold text-slate-400 dark:text-slate-400 w-16 text-right hidden sm:inline-block">
                         {order.created_at
                           ? new Date(order.created_at).toLocaleDateString(
                               "en-GB",
@@ -494,8 +494,8 @@ export const DashboardPage = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white/95 backdrop-blur-2xl rounded-[1.5rem] p-6 shadow-sm border border-white">
-          <h2 className="text-lg font-bold text-slate-800 mb-6">
+        <div className="bg-white/95 backdrop-blur-2xl rounded-[1.5rem] p-6 shadow-sm border border-white dark:bg-slate-900/60 dark:border-white/20 dark:shadow-[0_28px_70px_-50px_rgba(2,6,23,0.95)]">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6">
             Quick Actions
           </h2>
           <div className="grid grid-cols-2 gap-4">
@@ -503,7 +503,7 @@ export const DashboardPage = () => {
               <Link
                 key={action.label}
                 to={action.path}
-                className="flex flex-col items-center justify-center p-6 border border-slate-100 rounded-[1.25rem] hover:shadow-md hover:border-slate-200 transition-all bg-white group cursor-pointer"
+                className="flex flex-col items-center justify-center p-6 border border-slate-100 rounded-[1.25rem] hover:shadow-md hover:border-slate-200 transition-all bg-white group cursor-pointer dark:border-white/15 dark:bg-slate-900/55 dark:hover:bg-slate-800/70 dark:hover:border-white/30 dark:hover:shadow-[0_24px_62px_-40px_rgba(2,6,23,0.95)]"
               >
                 <div
                   className={cn(
@@ -513,7 +513,7 @@ export const DashboardPage = () => {
                 >
                   <action.icon className="size-6" />
                 </div>
-                <span className="text-[13px] font-bold text-slate-600">
+                <span className="text-[13px] font-bold text-slate-600 dark:text-slate-200">
                   {action.label}
                 </span>
               </Link>

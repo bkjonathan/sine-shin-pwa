@@ -39,7 +39,10 @@ export const CustomerStatsCards = ({ stats }: CustomerStatsCardsProps) => {
   return (
     <section className="grid gap-4 md:grid-cols-3">
       {metrics.map((metric) => (
-        <Card key={metric.label} className="glass-panel border-white/60">
+        <Card
+          key={metric.label}
+          className="glass-panel border-white/60 dark:border-white/20"
+        >
           <CardContent className="flex items-start justify-between p-5">
             <div className="space-y-1">
               <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
@@ -48,7 +51,7 @@ export const CustomerStatsCards = ({ stats }: CustomerStatsCardsProps) => {
               <p className="text-2xl font-semibold tracking-tight">{metric.value}</p>
               <p className="text-muted-foreground text-xs">{metric.helper}</p>
             </div>
-            <div className="rounded-xl border border-white/70 bg-white/70 p-2.5">
+            <div className="rounded-xl border border-white/70 bg-white/70 p-2.5 dark:border-white/20 dark:bg-slate-900/60">
               <metric.icon className="text-foreground size-4" />
             </div>
           </CardContent>

@@ -168,6 +168,14 @@
       linear-gradient(140deg, #eff7ff 0%, #eef5ff 45%, #e9f6ff 100%);
     background-attachment: fixed;
   }
+
+  .dark body {
+    background-image:
+      radial-gradient(circle at 8% 10%, rgba(34, 211, 238, 0.2), transparent 34%),
+      radial-gradient(circle at 92% 12%, rgba(14, 116, 144, 0.2), transparent 30%),
+      radial-gradient(circle at 88% 84%, rgba(59, 130, 246, 0.16), transparent 34%),
+      linear-gradient(145deg, #09111f 0%, #0b1728 45%, #0d1c2e 100%);
+  }
 }
 
 @layer utilities {
@@ -201,6 +209,28 @@
       linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
     background-size: 24px 24px;
   }
+}
+
+.dark .glass-panel {
+  border-color: rgba(148, 163, 184, 0.28);
+  background-color: rgba(15, 23, 42, 0.45);
+  box-shadow: 0 24px 65px -38px rgba(2, 6, 23, 0.85);
+}
+
+.dark .glass-panel-strong {
+  border-color: rgba(148, 163, 184, 0.3);
+  background-color: rgba(15, 23, 42, 0.6);
+  box-shadow: 0 32px 80px -44px rgba(2, 6, 23, 0.92);
+}
+
+.dark .glass-pill {
+  border-color: rgba(148, 163, 184, 0.34);
+  background-color: rgba(15, 23, 42, 0.56);
+}
+
+.dark .liquid-grid {
+  background-image: linear-gradient(rgba(148, 163, 184, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.18) 1px, transparent 1px);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -13,9 +13,12 @@ import { LoginPage } from "./pages/LoginPage";
 import { CustomersPage } from "./pages/CustomersPage";
 import { CustomerFormPage } from "./pages/CustomerFormPage";
 import { OrdersPage } from "./pages/OrdersPage";
+import { OrderFormPage } from "./pages/OrderFormPage";
 import { ExpensesPage } from "./pages/ExpensesPage";
+import { ExpenseFormPage } from "./pages/ExpenseFormPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ThemeProvider } from "./components/theme-provider";
 
 const ProtectedRoute = () => {
   const { session, loading } = useAuth();
@@ -40,28 +43,43 @@ const ProtectedRoute = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="light"
+      enableSystem={false}
+      storageKey="sine-shin-theme"
+      disableTransitionOnChange
+    >
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
 
-          <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<LiquidLayout />}>
-              <Route index element={<DashboardPage />} />
-              <Route path="customers" element={<CustomersPage />} />
-              <Route path="customers/new" element={<CustomerFormPage />} />
-              <Route
-                path="customers/:customerId/edit"
-                element={<CustomerFormPage />}
-              />
-              <Route path="orders" element={<OrdersPage />} />
-              <Route path="expenses" element={<ExpensesPage />} />
-              <Route path="settings" element={<SettingsPage />} />
+            <Route element={<ProtectedRoute />}>
+              <Route path="/" element={<LiquidLayout />}>
+                <Route index element={<DashboardPage />} />
+                <Route path="customers" element={<CustomersPage />} />
+                <Route path="customers/new" element={<CustomerFormPage />} />
+                <Route
+                  path="customers/:customerId/edit"
+                  element={<CustomerFormPage />}
+                />
+                <Route path="orders" element={<OrdersPage />} />
+                <Route path="orders/new" element={<OrderFormPage />} />
+                <Route path="orders/:orderId/edit" element={<OrderFormPage />} />
+                <Route path="expenses" element={<ExpensesPage />} />
+                <Route path="expenses/new" element={<ExpenseFormPage />} />
+                <Route
+                  path="expenses/:expenseId/edit"
+                  element={<ExpenseFormPage />}
+                />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
             </Route>
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

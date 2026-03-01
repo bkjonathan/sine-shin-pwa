@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type AuthMode = "signin" | "signup";
 
@@ -73,6 +74,9 @@ export const LoginPage = () => {
 
   return (
     <div className="liquid-page flex min-h-screen items-center justify-center p-4">
+      <div className="absolute right-4 top-4 z-20">
+        <ThemeToggle className="rounded-full" />
+      </div>
       <div className="liquid-orb left-[-100px] top-[-80px] size-72 bg-sky-400/35" />
       <div className="liquid-orb liquid-orb-drift right-[-90px] bottom-[-60px] size-[22rem] bg-blue-300/30" />
 

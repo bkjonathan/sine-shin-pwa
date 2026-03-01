@@ -237,7 +237,7 @@ export const CustomersPage = () => {
 
       <CustomerStatsCards stats={customerStats} />
 
-      <Card className="glass-panel border-white/60">
+      <Card className="glass-panel border-white/60 dark:border-white/20">
         <CardHeader className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -275,7 +275,7 @@ export const CustomersPage = () => {
           />
 
           {!isLoading && filteredCustomersCount > 0 && (
-            <div className="mt-5 flex flex-col gap-4 border-t border-white/50 pt-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="mt-5 flex flex-col gap-4 border-t border-white/50 pt-4 dark:border-white/20 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex flex-wrap items-center gap-3">
                 <p className="text-muted-foreground text-sm">
                   Showing {visibleStart.toLocaleString()}-
@@ -291,7 +291,7 @@ export const CustomersPage = () => {
                     id="page-size"
                     value={String(pageSize)}
                     onChange={(event) => setPageSize(Number(event.target.value))}
-                    className="focus-visible:border-ring focus-visible:ring-ring/50 border-white/60 h-9 rounded-xl border bg-white/48 px-3 text-sm shadow-[0_10px_28px_-24px_rgba(15,23,42,0.75)] backdrop-blur-xl outline-none focus-visible:ring-[3px]"
+                    className="focus-visible:border-ring focus-visible:ring-ring/50 border-white/60 dark:border-white/25 h-9 rounded-xl border bg-white/48 dark:bg-slate-900/45 px-3 text-sm text-foreground dark:text-slate-100 shadow-[0_10px_28px_-24px_rgba(15,23,42,0.75)] dark:shadow-[0_14px_30px_-24px_rgba(2,6,23,0.95)] backdrop-blur-xl outline-none focus-visible:ring-[3px] [&>option]:bg-white [&>option]:text-slate-700 dark:[&>option]:bg-slate-900 dark:[&>option]:text-slate-100"
                   >
                     {PAGE_SIZE_OPTIONS.map((option) => (
                       <option key={option} value={option}>
