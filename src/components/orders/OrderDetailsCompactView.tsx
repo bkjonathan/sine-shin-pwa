@@ -118,7 +118,9 @@ export const OrderDetailsCompactView = ({
   const cargoFeeForTotal = order.exclude_cargo_fee ? 0 : cargoFeeValue;
   const discount = toNumber(order.product_discount);
   const exchangeRate = toNumber(order.exchange_rate);
-  const total = itemSubtotal + serviceFee + shippingFee + deliveryFee + cargoFeeForTotal - discount;
+  const total =
+    itemSubtotal + serviceFee + shippingFee + deliveryFee + cargoFeeForTotal;
+  const profit = serviceFee + discount;
   const totalByRate = total * exchangeRate;
 
   const summaryRows: SummaryRow[] = [
@@ -132,7 +134,7 @@ export const OrderDetailsCompactView = ({
     },
     { label: "Product Discount", value: formatBaht(discount) },
     { label: "Total", value: formatBaht(total), tone: "positive" },
-    { label: "Profit", value: formatBaht(serviceFee), tone: "positive" },
+    { label: "Profit", value: formatBaht(profit), tone: "positive" },
     { label: "Total x Rate", value: formatKs(totalByRate), tone: "accent" },
   ];
 
@@ -190,7 +192,48 @@ export const OrderDetailsCompactView = ({
             <CardTitle className="text-lg">Product Details</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            <div className="space-y-2 md:hidden">
+              {order.order_items.map((item, index) => {
+                const qty = toNumber(item.product_qty);
+                const price = toNumber(item.price);
+                const weight = toNumber(item.product_weight);
+                const lineTotal = qty * price;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-xl border border-white/45 bg-white/45 p-3 dark:border-white/20 dark:bg-slate-900/45"
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-muted-foreground text-xs">Item #{index + 1}</span>
+                      <span className="text-sm font-semibold text-pink-600">
+                        {formatBaht(lineTotal)}
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground text-xs">Product Link</p>
+                    <p className="mt-1 break-all text-xs text-pink-600">
+                      {item.product_url || "-"}
+                    </p>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                      <div>
+                        <p className="text-muted-foreground">Qty</p>
+                        <p className="font-semibold">{formatAmount(qty)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Price</p>
+                        <p className="font-semibold">{formatBaht(price)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Weight</p>
+                        <p className="font-semibold">{formatAmount(weight)} kg</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[640px] text-sm">
                 <thead>
                   <tr className="border-b border-white/55 text-left text-xs text-slate-500 uppercase dark:border-white/20">
