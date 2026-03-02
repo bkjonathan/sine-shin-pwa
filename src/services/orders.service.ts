@@ -30,6 +30,9 @@ interface OrderFilterOptions {
   orderSources: string[];
 }
 
+const DEFAULT_ORDER_ID_PREFIX = "SSO-";
+const ORDER_ID_PAD_LENGTH = 5;
+
 const buildSearchFilter = (searchQuery?: string): string | null => {
   const trimmed = searchQuery?.trim();
   if (!trimmed) {
@@ -54,6 +57,37 @@ const orderSelectQuery = `
       `;
 
 export const ordersService = {
+  async getNextOrderCodePreview(): Promise<string> {
+    const [settingsResult, latestOrderResult] = await Promise.all([
+      supabase
+        .from("shop_settings")
+        .select("order_id_prefix")
+        .order("id", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("orders")
+        .select("id")
+        .order("id", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    if (settingsResult.error) {
+      console.error("Error fetching order id prefix:", settingsResult.error);
+      throw settingsResult.error;
+    }
+
+    if (latestOrderResult.error) {
+      console.error("Error fetching latest order id for preview:", latestOrderResult.error);
+      throw latestOrderResult.error;
+    }
+
+    const prefix = settingsResult.data?.order_id_prefix ?? DEFAULT_ORDER_ID_PREFIX;
+    const nextId = (latestOrderResult.data?.id ?? 0) + 1;
+    return `${prefix}${nextId.toString().padStart(ORDER_ID_PAD_LENGTH, "0")}`;
+  },
+
   async getOrders(): Promise<OrderWithItems[]> {
     const { data, error } = await supabase
       .from("orders")
@@ -229,9 +263,11 @@ export const ordersService = {
       "id" | "order_id" | "created_at" | "updated_at" | "deleted_at"
     >[],
   ): Promise<OrderWithItems> {
+    const { order_id: _ignoredOrderId, ...insertPayload } = order;
+
     const { data: newOrderData, error: orderError } = await supabase
       .from("orders")
-      .insert(order)
+      .insert(insertPayload)
       .select();
 
     if (orderError) {
@@ -267,9 +303,11 @@ export const ordersService = {
   },
 
   async updateOrder(id: number, order: Partial<Order>): Promise<Order> {
+    const { order_id: _ignoredOrderId, ...updatePayload } = order;
+
     const { data: updatedData, error } = await supabase
       .from("orders")
-      .update({ ...order, updated_at: new Date().toISOString() })
+      .update({ ...updatePayload, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select();
 

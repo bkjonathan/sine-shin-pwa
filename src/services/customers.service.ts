@@ -26,6 +26,9 @@ interface CustomerFilterOptions {
   platforms: string[];
 }
 
+const DEFAULT_CUSTOMER_ID_PREFIX = "SSC-";
+const CUSTOMER_ID_PAD_LENGTH = 5;
+
 const buildSearchFilter = (searchQuery?: string): string | null => {
   const trimmed = searchQuery?.trim();
   if (!trimmed) {
@@ -46,6 +49,41 @@ const buildSearchFilter = (searchQuery?: string): string | null => {
 };
 
 export const customersService = {
+  async getNextCustomerCodePreview(): Promise<string> {
+    const [settingsResult, latestCustomerResult] = await Promise.all([
+      supabase
+        .from("shop_settings")
+        .select("customer_id_prefix")
+        .order("id", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("customers")
+        .select("id")
+        .order("id", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    if (settingsResult.error) {
+      console.error("Error fetching customer id prefix:", settingsResult.error);
+      throw settingsResult.error;
+    }
+
+    if (latestCustomerResult.error) {
+      console.error(
+        "Error fetching latest customer id for preview:",
+        latestCustomerResult.error,
+      );
+      throw latestCustomerResult.error;
+    }
+
+    const prefix =
+      settingsResult.data?.customer_id_prefix ?? DEFAULT_CUSTOMER_ID_PREFIX;
+    const nextId = (latestCustomerResult.data?.id ?? 0) + 1;
+    return `${prefix}${nextId.toString().padStart(CUSTOMER_ID_PAD_LENGTH, "0")}`;
+  },
+
   async getCustomers(): Promise<Customer[]> {
     const { data, error } = await supabase
       .from("customers")
@@ -216,9 +254,11 @@ export const customersService = {
   async createCustomer(
     customer: Omit<Customer, "id" | "created_at" | "updated_at" | "deleted_at">,
   ): Promise<Customer> {
+    const { customer_id: _, ...insertPayload } = customer;
+
     const { data: insertedData, error } = await supabase
       .from("customers")
-      .insert(customer)
+      .insert(insertPayload)
       .select();
 
     if (error) {
@@ -239,9 +279,11 @@ export const customersService = {
     id: number,
     customer: Partial<Customer>,
   ): Promise<Customer> {
+    const { customer_id: _ignoredCustomerId, ...updatePayload } = customer;
+
     const { data: updatedData, error } = await supabase
       .from("customers")
-      .update({ ...customer, updated_at: new Date().toISOString() })
+      .update({ ...updatePayload, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select();
 

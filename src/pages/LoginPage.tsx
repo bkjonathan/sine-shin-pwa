@@ -107,9 +107,19 @@ export const LoginPage = () => {
                 setNotice(null);
               }}
             >
-              <TabsList className="w-full border border-white/60 bg-white/55">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Create Account</TabsTrigger>
+              <TabsList className="w-full border border-white/60 bg-white/55 dark:border-white/25 dark:bg-slate-900/60">
+                <TabsTrigger
+                  value="signin"
+                  className="dark:text-slate-300 dark:data-[state=active]:border-white/25 dark:data-[state=active]:bg-sky-500/25 dark:data-[state=active]:text-slate-100"
+                >
+                  Sign In
+                </TabsTrigger>
+                <TabsTrigger
+                  value="signup"
+                  className="dark:text-slate-300 dark:data-[state=active]:border-white/25 dark:data-[state=active]:bg-sky-500/25 dark:data-[state=active]:text-slate-100"
+                >
+                  Create Account
+                </TabsTrigger>
               </TabsList>
             </Tabs>
 

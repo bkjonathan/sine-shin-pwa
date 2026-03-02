@@ -22,6 +22,8 @@ import {
 } from "@/components/customers/customer-form.types";
 import { customersService } from "@/services/customers.service";
 
+const FALLBACK_CUSTOMER_CODE = "SSC-00001";
+
 export const CustomerFormPage = () => {
   const navigate = useNavigate();
   const { customerId } = useParams<{ customerId: string }>();
@@ -32,13 +34,18 @@ export const CustomerFormPage = () => {
   const isEditMode = hasCustomerIdParam;
 
   const [form, setForm] = useState<CustomerFormState>(emptyCustomerForm);
+  const [cityOptions, setCityOptions] = useState<string[]>([]);
+  const [platformOptions, setPlatformOptions] = useState<string[]>([]);
   const [isLoadingCustomer, setIsLoadingCustomer] = useState(isEditMode);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadCustomer = useCallback(async () => {
     if (!isEditMode) {
-      setForm(emptyCustomerForm);
+      setForm((current) => ({
+        ...emptyCustomerForm,
+        customer_id: current.customer_id,
+      }));
       setIsLoadingCustomer(false);
       return;
     }
@@ -74,6 +81,59 @@ export const CustomerFormPage = () => {
     void loadCustomer();
   }, [loadCustomer]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCityOptions = async () => {
+      try {
+        const { cities, platforms } = await customersService.getCustomerFilterOptions();
+        if (!cancelled) {
+          setCityOptions(cities);
+          setPlatformOptions(platforms);
+        }
+      } catch (cityLoadError) {
+        console.error("Failed to load customer autocomplete options:", cityLoadError);
+      }
+    };
+
+    void loadCityOptions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isEditMode) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadCustomerCodePreview = async () => {
+      try {
+        const nextCode = await customersService.getNextCustomerCodePreview();
+        if (!cancelled) {
+          setForm((current) => ({ ...current, customer_id: nextCode }));
+        }
+      } catch (previewError) {
+        console.error("Failed to load customer code preview:", previewError);
+        if (!cancelled) {
+          setForm((current) => ({
+            ...current,
+            customer_id: current.customer_id || FALLBACK_CUSTOMER_CODE,
+          }));
+        }
+      }
+    };
+
+    void loadCustomerCodePreview();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditMode]);
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -92,8 +152,7 @@ export const CustomerFormPage = () => {
     setError(null);
 
     try {
-      const payload = {
-        customer_id: toNullable(form.customer_id),
+      const sharedPayload = {
         name,
         phone: toNullable(form.phone),
         address: toNullable(form.address),
@@ -103,10 +162,11 @@ export const CustomerFormPage = () => {
       };
 
       if (isEditMode) {
-        await customersService.updateCustomer(parsedCustomerId as number, payload);
+        await customersService.updateCustomer(parsedCustomerId as number, sharedPayload);
       } else {
         await customersService.createCustomer({
-          ...payload,
+          ...sharedPayload,
+          customer_id: null,
           synced_from_device_at: null,
         });
       }
@@ -187,6 +247,8 @@ export const CustomerFormPage = () => {
               form={form}
               isSaving={isSaving}
               isEditMode={isEditMode}
+              cityOptions={cityOptions}
+              platformOptions={platformOptions}
               onSubmit={handleSubmit}
               onCancel={() => navigate("/customers")}
               onFieldChange={handleFieldChange}

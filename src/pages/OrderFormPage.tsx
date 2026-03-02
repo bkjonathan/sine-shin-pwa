@@ -30,6 +30,8 @@ import { customersService } from "@/services/customers.service";
 import { orderItemsService, ordersService } from "@/services/orders.service";
 import type { Customer, Order } from "@/types/database";
 
+const FALLBACK_ORDER_CODE = "SSO-00001";
+
 export const OrderFormPage = () => {
   const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
@@ -107,6 +109,37 @@ export const OrderFormPage = () => {
     void loadOrder();
   }, [loadOrder]);
 
+  useEffect(() => {
+    if (isEditMode) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadOrderCodePreview = async () => {
+      try {
+        const nextCode = await ordersService.getNextOrderCodePreview();
+        if (!cancelled) {
+          setForm((current) => ({ ...current, order_id: nextCode }));
+        }
+      } catch (previewError) {
+        console.error("Failed to load order code preview:", previewError);
+        if (!cancelled) {
+          setForm((current) => ({
+            ...current,
+            order_id: current.order_id || FALLBACK_ORDER_CODE,
+          }));
+        }
+      }
+    };
+
+    void loadOrderCodePreview();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditMode]);
+
   const handleFieldChange = <K extends keyof OrderFormState>(
     field: K,
     value: OrderFormState[K],
@@ -148,9 +181,9 @@ export const OrderFormPage = () => {
     setError(null);
     setIsSaving(true);
 
-    const orderPayload: Omit<
+    const baseOrderPayload: Omit<
       Order,
-      "id" | "created_at" | "updated_at" | "deleted_at"
+      "id" | "created_at" | "updated_at" | "deleted_at" | "synced_from_device_at"
     > = {
       order_id: toNullableString(form.order_id),
       customer_id: toNullableInt(form.customer_id),
@@ -175,7 +208,6 @@ export const OrderFormPage = () => {
       delivery_fee_by_shop: form.delivery_fee_by_shop,
       cargo_fee_by_shop: form.cargo_fee_by_shop,
       exclude_cargo_fee: form.exclude_cargo_fee,
-      synced_from_device_at: null,
     };
 
     const itemsToProcess = itemForms.filter(hasItemValue).map((item) => ({
@@ -184,17 +216,28 @@ export const OrderFormPage = () => {
       product_qty: toNullableInt(item.product_qty),
       price: toNullableNumber(item.price),
       product_weight: toNullableNumber(item.product_weight),
-      synced_from_device_at: null,
     }));
 
     try {
       if (!isEditMode) {
-        const itemPayloads = itemsToProcess.map(({ id, ...rest }) => rest);
-        await ordersService.createOrder(orderPayload, itemPayloads);
+        const createOrderPayload: Omit<
+          Order,
+          "id" | "created_at" | "updated_at" | "deleted_at"
+        > = {
+          ...baseOrderPayload,
+          synced_from_device_at: null,
+        };
+
+        const itemPayloads = itemsToProcess.map(({ id, ...rest }) => ({
+          ...rest,
+          synced_from_device_at: null,
+        }));
+
+        await ordersService.createOrder(createOrderPayload, itemPayloads);
       } else {
         const targetId = parsedOrderId as number;
 
-        await ordersService.updateOrder(targetId, orderPayload);
+        await ordersService.updateOrder(targetId, baseOrderPayload);
 
         const existingOrder = await ordersService.getOrderById(targetId);
         const existingItemIds = existingOrder?.order_items?.map((item) => item.id) || [];
@@ -229,6 +272,7 @@ export const OrderFormPage = () => {
               return orderItemsService.addOrderItem({
                 ...createPayload,
                 order_id: targetId,
+                synced_from_device_at: null,
               });
             }),
           );
@@ -260,11 +304,11 @@ export const OrderFormPage = () => {
             Order Management
           </p>
           <h1 className="text-3xl font-semibold tracking-tight">
-            {isEditMode ? "Edit Order" : "Create Order"}
+            {isEditMode ? "Edit Order & Items" : "Create Order"}
           </h1>
           <p className="text-muted-foreground text-sm">
             {isEditMode
-              ? "Update order details and nested line items."
+              ? "Update order details, add new items, and remove old items."
               : "Create a new order with one or more line items."}
           </p>
         </div>
@@ -292,7 +336,7 @@ export const OrderFormPage = () => {
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
             {isEditMode ? <PencilLine className="size-4" /> : <PlusSquare className="size-4" />}
-            {isEditMode ? "Order Update" : "New Order"}
+            {isEditMode ? "Edit Order & Items" : "New Order"}
           </CardTitle>
           <CardDescription>
             Required fields are validated before submission.

@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CityAutocompleteInput } from "@/components/customers/CityAutocompleteInput";
 import type { CustomerFormState } from "@/components/customers/customer-form.types";
 
 interface CustomerFormProps {
   form: CustomerFormState;
   isSaving: boolean;
   isEditMode: boolean;
+  cityOptions: string[];
+  platformOptions: string[];
   onCancel: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onFieldChange: <K extends keyof CustomerFormState>(
@@ -23,6 +26,8 @@ export const CustomerForm = ({
   form,
   isSaving,
   isEditMode,
+  cityOptions,
+  platformOptions,
   onCancel,
   onSubmit,
   onFieldChange,
@@ -35,8 +40,8 @@ export const CustomerForm = ({
           <Input
             id="customer-id"
             value={form.customer_id}
-            onChange={(event) => onFieldChange("customer_id", event.target.value)}
-            placeholder="CUS-0001"
+            readOnly
+            placeholder="Auto-generated from settings"
           />
         </div>
         <div className="space-y-2">
@@ -63,10 +68,11 @@ export const CustomerForm = ({
         </div>
         <div className="space-y-2">
           <Label htmlFor="customer-city">City</Label>
-          <Input
+          <CityAutocompleteInput
             id="customer-city"
             value={form.city}
-            onChange={(event) => onFieldChange("city", event.target.value)}
+            options={cityOptions}
+            onValueChange={(value) => onFieldChange("city", value)}
             placeholder="Bangkok"
           />
         </div>
@@ -86,10 +92,11 @@ export const CustomerForm = ({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="customer-platform">Platform</Label>
-          <Input
+          <CityAutocompleteInput
             id="customer-platform"
             value={form.platform}
-            onChange={(event) => onFieldChange("platform", event.target.value)}
+            options={platformOptions}
+            onValueChange={(value) => onFieldChange("platform", value)}
             placeholder="Facebook"
           />
         </div>

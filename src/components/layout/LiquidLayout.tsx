@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Bell,
+  ChevronsLeft,
+  ChevronsRight,
   HandCoins,
   Layers,
   LayoutDashboard,
@@ -36,17 +38,47 @@ const navItems = [
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
-const NavMenu = ({ onNavigate }: { onNavigate?: () => void }) => {
+const DESKTOP_SIDEBAR_STORAGE_KEY = "liquid_sidebar_collapsed";
+
+const getInitialDesktopSidebarState = () => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.localStorage.getItem(DESKTOP_SIDEBAR_STORAGE_KEY) === "1";
+};
+
+const NavMenu = ({
+  onNavigate,
+  collapsed = false,
+}: {
+  onNavigate?: () => void;
+  collapsed?: boolean;
+}) => {
   return (
-    <nav className="space-y-1">
+    <nav
+      className={cn(
+        "space-y-1",
+        collapsed && "flex flex-col items-center gap-3 space-y-0 pt-1",
+      )}
+    >
       {navItems.map((item) => (
         <NavLink
           key={item.path}
           to={item.path}
           end={item.path === "/"}
           onClick={onNavigate}
-          className={({ isActive }) =>
-            cn(
+          className={({ isActive }) => {
+            if (collapsed) {
+              return cn(
+                "mx-auto grid size-12 place-items-center rounded-full transition-all duration-200",
+                isActive
+                  ? "bg-slate-950/55 text-slate-100 shadow-[0_14px_30px_-22px_rgba(2,6,23,0.95)]"
+                  : "text-slate-200/85 hover:bg-slate-950/40 hover:text-slate-50",
+              );
+            }
+
+            return cn(
               buttonVariants({
                 variant: isActive ? "secondary" : "ghost",
                 size: "default",
@@ -55,27 +87,35 @@ const NavMenu = ({ onNavigate }: { onNavigate?: () => void }) => {
               isActive
                 ? "border-white/70 bg-white/70 text-foreground shadow-[0_14px_30px_-26px_rgba(15,23,42,0.9)]"
                 : "text-muted-foreground hover:text-foreground",
-            )
-          }
+            );
+          }}
+          title={collapsed ? item.label : undefined}
         >
           <item.icon className="size-4" />
-          <span>{item.label}</span>
+          <span className={collapsed ? "sr-only" : undefined}>{item.label}</span>
         </NavLink>
       ))}
     </nav>
   );
 };
 
-const ShellBrand = () => {
+const ShellBrand = ({ collapsed = false }: { collapsed?: boolean }) => {
   return (
-    <div className="flex items-center gap-3 px-1">
+    <div
+      className={cn(
+        "flex items-center px-1",
+        collapsed ? "justify-center" : "gap-3",
+      )}
+    >
       <div className="grid size-10 place-items-center rounded-xl border border-white/65 bg-gradient-to-br from-sky-500/95 via-cyan-500/85 to-blue-600/90 text-white shadow-[0_14px_36px_-16px_rgba(14,116,144,0.85)]">
         <Layers className="size-5" />
       </div>
-      <div>
-        <p className="text-base font-semibold tracking-tight">Sine Shin</p>
-        <p className="text-muted-foreground text-xs">Liquid Operations</p>
-      </div>
+      {!collapsed && (
+        <div>
+          <p className="text-base font-semibold tracking-tight">Sine Shin</p>
+          <p className="text-muted-foreground text-xs">Liquid Operations</p>
+        </div>
+      )}
     </div>
   );
 };
@@ -83,6 +123,16 @@ const ShellBrand = () => {
 export const LiquidLayout: React.FC = () => {
   const { signOut, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState(
+    getInitialDesktopSidebarState,
+  );
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      DESKTOP_SIDEBAR_STORAGE_KEY,
+      desktopCollapsed ? "1" : "0",
+    );
+  }, [desktopCollapsed]);
 
   return (
     <div className="liquid-page h-screen">
@@ -137,42 +187,106 @@ export const LiquidLayout: React.FC = () => {
       </Sheet>
 
       <div className="relative z-10 flex h-full overflow-hidden">
-        <aside className="hidden w-80 shrink-0 p-4 pr-0 md:block">
+        <aside
+          className={cn(
+            "hidden shrink-0 p-4 pr-0 transition-[width] duration-300 md:block",
+            desktopCollapsed ? "w-28" : "w-80",
+          )}
+        >
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.35, ease: "easeOut" }}
-            className="glass-panel-strong sticky top-4 flex h-[calc(100vh-2rem)] flex-col p-4"
+            className={cn(
+              "glass-panel-strong sticky top-4 flex h-[calc(100vh-2rem)] flex-col transition-all duration-300",
+              desktopCollapsed ? "px-3 py-4" : "p-4",
+            )}
           >
-            <ShellBrand />
-            <Separator className="my-4 bg-white/60 dark:bg-white/20" />
-            <NavMenu />
+            <div
+              className={cn(
+                "flex gap-3",
+                desktopCollapsed
+                  ? "flex-col items-center"
+                  : "items-center justify-between",
+              )}
+            >
+              <ShellBrand collapsed={desktopCollapsed} />
+              <Button
+                variant={desktopCollapsed ? "ghost" : "outline"}
+                size="icon-sm"
+                className={cn(
+                  "rounded-full",
+                  desktopCollapsed &&
+                    "size-11 border border-white/15 bg-slate-950/50 text-slate-100 hover:bg-slate-950/65",
+                )}
+                onClick={() => setDesktopCollapsed((prev) => !prev)}
+              >
+                {desktopCollapsed ? (
+                  <ChevronsRight className="size-4" />
+                ) : (
+                  <ChevronsLeft className="size-4" />
+                )}
+                <span className="sr-only">
+                  {desktopCollapsed ? "Expand navigation" : "Collapse navigation"}
+                </span>
+              </Button>
+            </div>
+
+            <Separator
+              className={cn(
+                "my-4 bg-white/60 dark:bg-white/20",
+                desktopCollapsed && "mx-2",
+              )}
+            />
+            <NavMenu collapsed={desktopCollapsed} />
 
             <div className="mt-auto space-y-4">
-              <Separator className="bg-white/60 dark:bg-white/20" />
-              <div className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/60 p-3 backdrop-blur-xl dark:border-white/20 dark:bg-slate-900/65 dark:shadow-[0_18px_40px_-30px_rgba(2,6,23,0.95)]">
+              <Separator
+                className={cn(
+                  "bg-white/60 dark:bg-white/20",
+                  desktopCollapsed && "mx-1",
+                )}
+              />
+              <div
+                className={cn(
+                  "rounded-2xl border border-white/60 bg-white/60 backdrop-blur-xl dark:border-white/20 dark:bg-slate-900/65 dark:shadow-[0_18px_40px_-30px_rgba(2,6,23,0.95)]",
+                  desktopCollapsed
+                    ? "mx-auto flex w-fit justify-center rounded-full p-2"
+                    : "flex items-center gap-3 p-3",
+                )}
+              >
                 <Avatar className="size-9 border border-white/60 bg-white/75 dark:border-white/25 dark:bg-slate-800/70">
                   <AvatarFallback className="dark:bg-slate-700/70 dark:text-slate-100">
                     {user?.email?.slice(0, 2).toUpperCase() ?? "SS"}
                   </AvatarFallback>
                 </Avatar>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium dark:text-slate-100">
-                    {user?.email ?? "Signed in"}
-                  </p>
-                  <p className="text-muted-foreground text-xs dark:text-slate-300">
-                    Authenticated
-                  </p>
-                </div>
+                {!desktopCollapsed && (
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium dark:text-slate-100">
+                      {user?.email ?? "Signed in"}
+                    </p>
+                    <p className="text-muted-foreground text-xs dark:text-slate-300">
+                      Authenticated
+                    </p>
+                  </div>
+                )}
               </div>
 
               <Button
                 variant="ghost"
-                className="w-full justify-start text-red-600 hover:bg-red-500/10 hover:text-red-600"
+                className={cn(
+                  "w-full text-red-600 hover:bg-red-500/10 hover:text-red-600",
+                  desktopCollapsed
+                    ? "mx-auto h-11 w-11 justify-center rounded-2xl p-0"
+                    : "justify-start",
+                )}
                 onClick={() => void signOut()}
+                title={desktopCollapsed ? "Sign Out" : undefined}
               >
                 <LogOut className="size-4" />
-                Sign Out
+                <span className={desktopCollapsed ? "sr-only" : undefined}>
+                  Sign Out
+                </span>
               </Button>
             </div>
           </motion.div>
