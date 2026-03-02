@@ -1,4 +1,10 @@
 import { supabase } from "@/lib/supabase";
+import {
+  getNextLocalId,
+  stripIdentityFields,
+  withLegacyId,
+  withLegacyIds,
+} from "@/services/local-id.utils";
 import type { Order, OrderItem } from "@/types/database";
 
 export interface OrderWithItems extends Order {
@@ -56,19 +62,28 @@ const orderSelectQuery = `
         order_items (*)
       `;
 
+const mapOrderWithItems = (order: OrderWithItems): OrderWithItems => ({
+  ...withLegacyId(order),
+  order_items: withLegacyIds(order.order_items as OrderItem[]),
+});
+
+const mapOrdersWithItems = (
+  orders: OrderWithItems[] | null | undefined,
+): OrderWithItems[] => (orders ?? []).map(mapOrderWithItems);
+
 export const ordersService = {
   async getNextOrderCodePreview(): Promise<string> {
     const [settingsResult, latestOrderResult] = await Promise.all([
       supabase
         .from("shop_settings")
         .select("order_id_prefix")
-        .order("id", { ascending: false })
+        .order("local_id", { ascending: false })
         .limit(1)
         .maybeSingle(),
       supabase
         .from("orders")
-        .select("id")
-        .order("id", { ascending: false })
+        .select("local_id")
+        .order("local_id", { ascending: false })
         .limit(1)
         .maybeSingle(),
     ]);
@@ -84,7 +99,7 @@ export const ordersService = {
     }
 
     const prefix = settingsResult.data?.order_id_prefix ?? DEFAULT_ORDER_ID_PREFIX;
-    const nextId = (latestOrderResult.data?.id ?? 0) + 1;
+    const nextId = (latestOrderResult.data?.local_id ?? 0) + 1;
     return `${prefix}${nextId.toString().padStart(ORDER_ID_PAD_LENGTH, "0")}`;
   },
 
@@ -100,7 +115,8 @@ export const ordersService = {
       console.error("Error fetching orders:", error);
       throw error;
     }
-    return (data || []) as OrderWithItems[];
+
+    return mapOrdersWithItems(data as OrderWithItems[]);
   },
 
   async getOrdersPage({
@@ -144,7 +160,7 @@ export const ordersService = {
     }
 
     return {
-      data: (data ?? []) as OrderWithItems[],
+      data: mapOrdersWithItems(data as OrderWithItems[]),
       count: count ?? 0,
     };
   },
@@ -154,21 +170,21 @@ export const ordersService = {
       await Promise.all([
         supabase
           .from("orders")
-          .select("id", { count: "exact", head: true })
+          .select("local_id", { count: "exact", head: true })
           .is("deleted_at", null),
         supabase
           .from("orders")
-          .select("id", { count: "exact", head: true })
+          .select("local_id", { count: "exact", head: true })
           .is("deleted_at", null)
           .eq("status", "pending"),
         supabase
           .from("orders")
-          .select("id", { count: "exact", head: true })
+          .select("local_id", { count: "exact", head: true })
           .is("deleted_at", null)
           .eq("status", "completed"),
         supabase
           .from("orders")
-          .select("id", { count: "exact", head: true })
+          .select("local_id", { count: "exact", head: true })
           .is("deleted_at", null)
           .not("customer_id", "is", null),
       ]);
@@ -244,7 +260,7 @@ export const ordersService = {
     const { data, error } = await supabase
       .from("orders")
       .select(orderSelectQuery)
-      .eq("id", id)
+      .eq("local_id", id)
       .is("deleted_at", null)
       .is("order_items.deleted_at", null)
       .single();
@@ -253,7 +269,8 @@ export const ordersService = {
       console.error("Error fetching order by id:", error);
       throw error;
     }
-    return data as OrderWithItems | null;
+
+    return data ? mapOrderWithItems(data as OrderWithItems) : null;
   },
 
   async createOrder(
@@ -263,11 +280,16 @@ export const ordersService = {
       "id" | "order_id" | "created_at" | "updated_at" | "deleted_at"
     >[],
   ): Promise<OrderWithItems> {
-    const { order_id: _ignoredOrderId, ...insertPayload } = order;
+    const orderLocalId =
+      typeof order.local_id === "number"
+        ? order.local_id
+        : await getNextLocalId("orders");
+
+    const orderPayload = stripIdentityFields(order);
 
     const { data: newOrderData, error: orderError } = await supabase
       .from("orders")
-      .insert(insertPayload)
+      .insert({ ...orderPayload, local_id: orderLocalId })
       .select();
 
     if (orderError) {
@@ -281,13 +303,25 @@ export const ordersService = {
       );
     }
 
-    const newOrder = newOrderData[0];
+    const newOrder = withLegacyId(newOrderData[0] as Order);
 
     if (items && items.length > 0) {
-      const itemsToInsert = items.map((item) => ({
-        ...item,
-        order_id: newOrder.id,
-      }));
+      const nextItemLocalId = await getNextLocalId("order_items");
+      let offset = 0;
+
+      const itemsToInsert = items.map((item) => {
+        const localId =
+          typeof item.local_id === "number"
+            ? item.local_id
+            : nextItemLocalId + offset++;
+        const itemPayload = stripIdentityFields(item);
+
+        return {
+          ...itemPayload,
+          local_id: localId,
+          order_id: newOrder.id,
+        };
+      });
 
       const { error: itemsError } = await supabase
         .from("order_items")
@@ -303,12 +337,12 @@ export const ordersService = {
   },
 
   async updateOrder(id: number, order: Partial<Order>): Promise<Order> {
-    const { order_id: _ignoredOrderId, ...updatePayload } = order;
+    const updatePayload = stripIdentityFields(order);
 
     const { data: updatedData, error } = await supabase
       .from("orders")
       .update({ ...updatePayload, updated_at: new Date().toISOString() })
-      .eq("id", id)
+      .eq("local_id", id)
       .select();
 
     if (error) {
@@ -322,14 +356,14 @@ export const ordersService = {
       );
     }
 
-    return updatedData[0];
+    return withLegacyId(updatedData[0] as Order);
   },
 
   async deleteOrder(id: number): Promise<void> {
     const { error } = await supabase
       .from("orders")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", id);
+      .eq("local_id", id);
 
     if (error) {
       console.error("Error deleting order:", error);
@@ -342,9 +376,16 @@ export const orderItemsService = {
   async addOrderItem(
     item: Omit<OrderItem, "id" | "created_at" | "updated_at" | "deleted_at">,
   ): Promise<OrderItem> {
+    const localId =
+      typeof item.local_id === "number"
+        ? item.local_id
+        : await getNextLocalId("order_items");
+
+    const itemPayload = stripIdentityFields(item);
+
     const { data: insertedData, error } = await supabase
       .from("order_items")
-      .insert(item)
+      .insert({ ...itemPayload, local_id: localId })
       .select();
 
     if (error) {
@@ -358,17 +399,19 @@ export const orderItemsService = {
       );
     }
 
-    return insertedData[0];
+    return withLegacyId(insertedData[0] as OrderItem);
   },
 
   async updateOrderItem(
     id: number,
     item: Partial<OrderItem>,
   ): Promise<OrderItem> {
+    const updatePayload = stripIdentityFields(item);
+
     const { data: updatedData, error } = await supabase
       .from("order_items")
-      .update({ ...item, updated_at: new Date().toISOString() })
-      .eq("id", id)
+      .update({ ...updatePayload, updated_at: new Date().toISOString() })
+      .eq("local_id", id)
       .select();
 
     if (error) {
@@ -382,14 +425,14 @@ export const orderItemsService = {
       );
     }
 
-    return updatedData[0];
+    return withLegacyId(updatedData[0] as OrderItem);
   },
 
   async deleteOrderItem(id: number): Promise<void> {
     const { error } = await supabase
       .from("order_items")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", id);
+      .eq("local_id", id);
 
     if (error) {
       console.error("Error deleting order item:", error);

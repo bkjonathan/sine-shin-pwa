@@ -1,4 +1,10 @@
 import { supabase } from "@/lib/supabase";
+import {
+  getNextLocalId,
+  stripIdentityFields,
+  withLegacyId,
+  withLegacyIds,
+} from "@/services/local-id.utils";
 import type { Expense } from "@/types/database";
 
 interface GetExpensesPageParams {
@@ -48,7 +54,8 @@ export const expensesService = {
       console.error("Error fetching expenses:", error);
       throw error;
     }
-    return data || [];
+
+    return withLegacyIds(data as Expense[]);
   },
 
   async getExpensesPage({
@@ -87,7 +94,7 @@ export const expensesService = {
     }
 
     return {
-      data: data ?? [],
+      data: withLegacyIds(data as Expense[]),
       count: count ?? 0,
     };
   },
@@ -136,7 +143,7 @@ export const expensesService = {
     const { data, error } = await supabase
       .from("expenses")
       .select("*")
-      .eq("id", id)
+      .eq("local_id", id)
       .is("deleted_at", null)
       .single();
 
@@ -144,15 +151,23 @@ export const expensesService = {
       console.error("Error fetching expense by id:", error);
       throw error;
     }
-    return data;
+
+    return data ? withLegacyId(data as Expense) : null;
   },
 
   async createExpense(
     expense: Omit<Expense, "id" | "created_at" | "updated_at" | "deleted_at">,
   ): Promise<Expense> {
+    const localId =
+      typeof expense.local_id === "number"
+        ? expense.local_id
+        : await getNextLocalId("expenses");
+
+    const payload = stripIdentityFields(expense);
+
     const { data: insertedData, error } = await supabase
       .from("expenses")
-      .insert(expense)
+      .insert({ ...payload, local_id: localId })
       .select();
 
     if (error) {
@@ -166,14 +181,16 @@ export const expensesService = {
       );
     }
 
-    return insertedData[0];
+    return withLegacyId(insertedData[0] as Expense);
   },
 
   async updateExpense(id: number, expense: Partial<Expense>): Promise<Expense> {
+    const updatePayload = stripIdentityFields(expense);
+
     const { data: updatedData, error } = await supabase
       .from("expenses")
-      .update({ ...expense, updated_at: new Date().toISOString() })
-      .eq("id", id)
+      .update({ ...updatePayload, updated_at: new Date().toISOString() })
+      .eq("local_id", id)
       .select();
 
     if (error) {
@@ -187,14 +204,14 @@ export const expensesService = {
       );
     }
 
-    return updatedData[0];
+    return withLegacyId(updatedData[0] as Expense);
   },
 
   async deleteExpense(id: number): Promise<void> {
     const { error } = await supabase
       .from("expenses")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", id);
+      .eq("local_id", id);
 
     if (error) {
       console.error("Error deleting expense:", error);

@@ -1,4 +1,10 @@
 import { supabase } from "@/lib/supabase";
+import {
+  getNextLocalId,
+  stripIdentityFields,
+  withLegacyId,
+  withLegacyIds,
+} from "@/services/local-id.utils";
 import type { Customer } from "@/types/database";
 
 interface GetCustomersPageParams {
@@ -54,13 +60,13 @@ export const customersService = {
       supabase
         .from("shop_settings")
         .select("customer_id_prefix")
-        .order("id", { ascending: false })
+        .order("local_id", { ascending: false })
         .limit(1)
         .maybeSingle(),
       supabase
         .from("customers")
-        .select("id")
-        .order("id", { ascending: false })
+        .select("local_id")
+        .order("local_id", { ascending: false })
         .limit(1)
         .maybeSingle(),
     ]);
@@ -80,7 +86,7 @@ export const customersService = {
 
     const prefix =
       settingsResult.data?.customer_id_prefix ?? DEFAULT_CUSTOMER_ID_PREFIX;
-    const nextId = (latestCustomerResult.data?.id ?? 0) + 1;
+    const nextId = (latestCustomerResult.data?.local_id ?? 0) + 1;
     return `${prefix}${nextId.toString().padStart(CUSTOMER_ID_PAD_LENGTH, "0")}`;
   },
 
@@ -95,7 +101,8 @@ export const customersService = {
       console.error("Error fetching customers:", error);
       throw error;
     }
-    return data || [];
+
+    return withLegacyIds(data as Customer[]);
   },
 
   async getCustomersPage({
@@ -138,7 +145,7 @@ export const customersService = {
     }
 
     return {
-      data: data ?? [],
+      data: withLegacyIds(data as Customer[]),
       count: count ?? 0,
     };
   },
@@ -148,23 +155,23 @@ export const customersService = {
       await Promise.all([
         supabase
           .from("customers")
-          .select("id", { count: "exact", head: true })
+          .select("local_id", { count: "exact", head: true })
           .is("deleted_at", null),
         supabase
           .from("customers")
-          .select("id", { count: "exact", head: true })
+          .select("local_id", { count: "exact", head: true })
           .is("deleted_at", null)
           .not("phone", "is", null)
           .neq("phone", ""),
         supabase
           .from("customers")
-          .select("id", { count: "exact", head: true })
+          .select("local_id", { count: "exact", head: true })
           .is("deleted_at", null)
           .not("platform", "is", null)
           .neq("platform", ""),
         supabase
           .from("customers")
-          .select("id", { count: "exact", head: true })
+          .select("local_id", { count: "exact", head: true })
           .is("deleted_at", null)
           .not("social_media_url", "is", null)
           .neq("social_media_url", ""),
@@ -240,7 +247,7 @@ export const customersService = {
     const { data, error } = await supabase
       .from("customers")
       .select("*")
-      .eq("id", id)
+      .eq("local_id", id)
       .is("deleted_at", null)
       .single();
 
@@ -248,17 +255,23 @@ export const customersService = {
       console.error("Error fetching customer by id:", error);
       throw error;
     }
-    return data;
+
+    return data ? withLegacyId(data as Customer) : null;
   },
 
   async createCustomer(
     customer: Omit<Customer, "id" | "created_at" | "updated_at" | "deleted_at">,
   ): Promise<Customer> {
-    const { customer_id: _, ...insertPayload } = customer;
+    const localId =
+      typeof customer.local_id === "number"
+        ? customer.local_id
+        : await getNextLocalId("customers");
+
+    const rest = stripIdentityFields(customer);
 
     const { data: insertedData, error } = await supabase
       .from("customers")
-      .insert(insertPayload)
+      .insert({ ...rest, local_id: localId })
       .select();
 
     if (error) {
@@ -272,19 +285,19 @@ export const customersService = {
       );
     }
 
-    return insertedData[0];
+    return withLegacyId(insertedData[0] as Customer);
   },
 
   async updateCustomer(
     id: number,
     customer: Partial<Customer>,
   ): Promise<Customer> {
-    const { customer_id: _ignoredCustomerId, ...updatePayload } = customer;
+    const updatePayload = stripIdentityFields(customer);
 
     const { data: updatedData, error } = await supabase
       .from("customers")
       .update({ ...updatePayload, updated_at: new Date().toISOString() })
-      .eq("id", id)
+      .eq("local_id", id)
       .select();
 
     if (error) {
@@ -298,14 +311,14 @@ export const customersService = {
       );
     }
 
-    return updatedData[0];
+    return withLegacyId(updatedData[0] as Customer);
   },
 
   async deleteCustomer(id: number): Promise<void> {
     const { error } = await supabase
       .from("customers")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", id);
+      .eq("local_id", id);
 
     if (error) {
       console.error("Error deleting customer:", error);

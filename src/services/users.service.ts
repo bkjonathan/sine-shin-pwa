@@ -1,4 +1,10 @@
 import { supabase } from "@/lib/supabase";
+import {
+  getNextLocalId,
+  stripIdentityFields,
+  withLegacyId,
+  withLegacyIds,
+} from "@/services/local-id.utils";
 import type { User } from "@/types/database";
 
 export const usersService = {
@@ -12,21 +18,23 @@ export const usersService = {
       console.error("Error fetching users:", error);
       throw error;
     }
-    return data || [];
+
+    return withLegacyIds(data as User[]);
   },
 
   async getUserById(id: number): Promise<User | null> {
     const { data, error } = await supabase
       .from("users")
       .select("*")
-      .eq("id", id)
+      .eq("local_id", id)
       .single();
 
     if (error && error.code !== "PGRST116") {
       console.error("Error fetching user by id:", error);
       throw error;
     }
-    return data;
+
+    return data ? withLegacyId(data as User) : null;
   },
 
   async createUser(
@@ -35,9 +43,14 @@ export const usersService = {
       "id" | "created_at" | "updated_at" | "synced_from_device_at"
     >,
   ): Promise<User> {
+    const localId =
+      typeof user.local_id === "number" ? user.local_id : await getNextLocalId("users");
+
+    const payload = stripIdentityFields(user);
+
     const { data: insertedData, error } = await supabase
       .from("users")
-      .insert(user)
+      .insert({ ...payload, local_id: localId })
       .select();
 
     if (error) {
@@ -51,14 +64,16 @@ export const usersService = {
       );
     }
 
-    return insertedData[0];
+    return withLegacyId(insertedData[0] as User);
   },
 
   async updateUser(id: number, user: Partial<User>): Promise<User> {
+    const updatePayload = stripIdentityFields(user);
+
     const { data: updatedData, error } = await supabase
       .from("users")
-      .update({ ...user, updated_at: new Date().toISOString() })
-      .eq("id", id)
+      .update({ ...updatePayload, updated_at: new Date().toISOString() })
+      .eq("local_id", id)
       .select();
 
     if (error) {
@@ -72,11 +87,11 @@ export const usersService = {
       );
     }
 
-    return updatedData[0];
+    return withLegacyId(updatedData[0] as User);
   },
 
   async deleteUser(id: number): Promise<void> {
-    const { error } = await supabase.from("users").delete().eq("id", id);
+    const { error } = await supabase.from("users").delete().eq("local_id", id);
 
     if (error) {
       console.error("Error deleting user:", error);

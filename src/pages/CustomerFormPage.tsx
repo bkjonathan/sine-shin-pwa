@@ -166,7 +166,7 @@ export const CustomerFormPage = () => {
       } else {
         await customersService.createCustomer({
           ...sharedPayload,
-          customer_id: null,
+          customer_id: toNullable(form.customer_id),
           synced_from_device_at: null,
         });
       }

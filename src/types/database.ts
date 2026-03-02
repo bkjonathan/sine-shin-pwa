@@ -1,4 +1,6 @@
 export interface ShopSettings {
+  uuid?: string;
+  local_id?: number;
   id: number;
   shop_name: string;
   phone: string | null;
@@ -13,6 +15,8 @@ export interface ShopSettings {
 }
 
 export interface User {
+  uuid?: string;
+  local_id?: number;
   id: number;
   name: string;
   password_hash: string;
@@ -23,6 +27,8 @@ export interface User {
 }
 
 export interface Customer {
+  uuid?: string;
+  local_id?: number;
   id: number;
   customer_id: string | null;
   name: string;
@@ -38,6 +44,8 @@ export interface Customer {
 }
 
 export interface Order {
+  uuid?: string;
+  local_id?: number;
   id: number;
   order_id: string | null;
   customer_id: number | null;
@@ -69,6 +77,8 @@ export interface Order {
 }
 
 export interface OrderItem {
+  uuid?: string;
+  local_id?: number;
   id: number;
   order_id: number | null;
   product_url: string | null;
@@ -82,6 +92,8 @@ export interface OrderItem {
 }
 
 export interface Expense {
+  uuid?: string;
+  local_id?: number;
   id: number;
   expense_id: string | null;
   title: string;
@@ -97,10 +109,12 @@ export interface Expense {
 }
 
 export interface SyncLog {
-  id: number;
-  table_name: string | null;
-  operation: string | null;
-  record_id: number | null;
+  uuid: string;
+  table_name: string;
+  operation: string;
+  record_uuid: string | null;
+  local_id: number | null;
+  payload: Record<string, unknown> | null;
   received_at: string | null;
 }
 
