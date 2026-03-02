@@ -14,6 +14,7 @@ import { CustomersPage } from "./pages/CustomersPage";
 import { CustomerFormPage } from "./pages/CustomerFormPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { OrderFormPage } from "./pages/OrderFormPage";
+import { OrderDetailsPage } from "./pages/OrderDetailsPage";
 import { ExpensesPage } from "./pages/ExpensesPage";
 import { ExpenseFormPage } from "./pages/ExpenseFormPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -67,6 +68,7 @@ function App() {
                 />
                 <Route path="orders" element={<OrdersPage />} />
                 <Route path="orders/new" element={<OrderFormPage />} />
+                <Route path="orders/:orderId" element={<OrderDetailsPage />} />
                 <Route path="orders/:orderId/edit" element={<OrderFormPage />} />
                 <Route path="expenses" element={<ExpensesPage />} />
                 <Route path="expenses/new" element={<ExpenseFormPage />} />

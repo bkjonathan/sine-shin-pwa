@@ -1,4 +1,4 @@
-import { PencilLine, Trash2 } from "lucide-react";
+import { Eye, PencilLine, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -106,6 +106,12 @@ export const OrdersTable = ({
             <TableCell>{formatOrderDate(order.order_date)}</TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end gap-2">
+                <Button asChild variant="outline" size="sm">
+                  <Link to={`/orders/${order.id}`}>
+                    <Eye className="size-4" />
+                    View
+                  </Link>
+                </Button>
                 <Button asChild variant="outline" size="sm">
                   <Link to={`/orders/${order.id}/edit`}>
                     <PencilLine className="size-4" />
